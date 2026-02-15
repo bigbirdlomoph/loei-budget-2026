@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <style>
+    body { font-family: 'Prompt', sans-serif; background-color: #f1f5f9; }
+    .moph-green { background-color: #007B5E; }
+    .text-moph { color: #007B5E; }
+    #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
+    .loader-circle { width: 45px; height: 45px; border: 5px solid #f1f5f9; border-top: 5px solid #007B5E; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    #map { height: 450px; width: 100%; border-radius: 1rem; z-index: 10; background: #fff; border: 1px solid #e2e8f0; }
+    .district-label { font-weight: 600; color: #334155; text-shadow: 1px 1px 2px white; text-align: center; font-size: 11px; pointer-events: none; }
+    .summary-table thead th { background-color: #f8fafc; color: #64748b; font-weight: 600; font-size: 0.65rem; padding: 0.5rem; border-bottom: 2px solid #e2e8f0; }
+    .summary-table tbody td { padding: 0.5rem; border-bottom: 1px solid #f1f5f9; font-size: 0.75rem; }
+    .summary-table tfoot td { padding: 0.5rem; font-weight: bold; background-color: #f8fafc; border-top: 2px solid #e2e8f0; font-size: 0.8rem; }
+    .table-container { background: white; border-radius: 1rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+
+  <div id="loader"><div class="loader-circle"></div><p class="mt-4 text-[#007B5E] font-medium text-sm">กำลังโหลด Dashboard...</p></div>
+
+  <nav class="moph-green text-white p-4 shadow-lg sticky top-0 z-50">
+    <div class="container mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-white p-2 rounded-full shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-[#007B5E]" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-semibold leading-tight">ระบบงบลงทุน สสจ.เลย <span id="nav-version" class="text-[10px] opacity-70 font-normal ml-2"></span></h1>
+          <p class="text-[10px] opacity-80 uppercase tracking-tighter">Loei Provincial Public Health Office</p>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container mx-auto p-4 md:p-6 lg:p-8">
+    
+    <section class="bg-white p-6 rounded-3xl shadow-sm mb-8 border border-gray-100 flex flex-col md:flex-row items-end gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 flex-grow w-full text-gray-700">
+        <div><label class="text-xs font-medium text-gray-400">ปีงบประมาณ</label><select id="fYear" onchange="applyFilters()" class="w-full border-gray-200 rounded-lg p-2 bg-gray-50 mt-1"></select></div>
+        <div><label class="text-xs font-medium text-gray-400">อำเภอ (4201-4214)</label><select id="fAmphoe" onchange="applyFilters()" class="w-full border-gray-200 rounded-lg p-2 bg-gray-50 mt-1"></select></div>
+        <div><label class="text-xs font-medium text-gray-400">ประเภทงบ</label><select id="fType" onchange="applyFilters()" class="w-full border-gray-200 rounded-lg p-2 bg-gray-50 mt-1"><option value="All">ทั้งหมด</option><option value="ครุภัณฑ์">ครุภัณฑ์</option><option value="สิ่งก่อสร้าง">สิ่งก่อสร้าง</option></select></div>
+        <div><label class="text-xs font-medium text-gray-400">ประเภทหน่วยงาน</label><select id="fUnit" onchange="applyFilters()" class="w-full border-gray-200 rounded-lg p-2 bg-gray-50 mt-1"><option value="All">ทั้งหมด</option><option value="บริการ (รพ.)">บริการ (รพ.)</option><option value="บริหาร">บริหาร</option><option value="บริการ (ปฐมภูมิ)">บริการ (ปฐมภูมิ)</option></select></div>
+      </div>
+      <button onclick="resetFilters()" class="bg-white hover:bg-gray-50 text-gray-500 px-6 py-2 rounded-lg text-sm font-medium transition-colors border border-gray-300 shadow-sm">ล้างค่า</button>
+    </section>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 text-gray-700">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border-t-4 border-blue-500"><p class="text-gray-400 text-xs uppercase">จำนวนครุภัณฑ์</p><h3 id="c-eq-count" class="text-3xl font-bold mt-1">0</h3></div>
+      <div class="bg-white p-5 rounded-2xl shadow-sm border-t-4 border-amber-500"><p class="text-gray-400 text-xs uppercase">งบครุภัณฑ์รวม</p><h3 id="c-eq-sum" class="text-2xl font-bold mt-1">0</h3></div>
+      <div class="bg-white p-5 rounded-2xl shadow-sm border-t-4 border-emerald-500"><p class="text-gray-400 text-xs uppercase">จำนวนสิ่งก่อสร้าง</p><h3 id="c-bd-count" class="text-3xl font-bold mt-1">0</h3></div>
+      <div class="bg-white p-5 rounded-2xl shadow-sm border-t-4 border-rose-500"><p class="text-gray-400 text-xs uppercase">งบสิ่งก่อสร้างรวม</p><h3 id="c-bd-sum" class="text-2xl font-bold mt-1">0</h3></div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+      <div class="bg-white p-5 rounded-3xl shadow-sm border"><h3 class="font-bold text-gray-700 mb-4 italic underline text-xs">แผนที่ขอบเขตอำเภอจังหวัดเลย</h3><div id="map"></div></div>
+      <div class="bg-white p-5 rounded-3xl shadow-sm border min-h-[450px] flex flex-col">
+        <h3 class="font-bold text-gray-700 mb-4 text-center text-sm">สัดส่วนงบลงทุนรายประเภทหน่วยบริการ</h3>
+        <div class="flex-grow"><canvas id="mophChart"></canvas></div>
+      </div>
+    </div>
+
+    <div id="summary-section" class="space-y-16"></div>
+
+    <div class="text-right text-[10px] text-gray-300 italic mt-8 border-t pt-4">Status: <span id="sys-version"></span></div>
+  </main>
+
+  <script>
+    var rawEq = [], rawBd = [], hospMap = {}, myChart = null, map = null, mapMarkers = [];
+    var districtOrder = ["เมืองเลย", "นาด้วง", "เชียงคาน", "ปากชม", "ด่านซ้าย", "นาแห้ว", "ภูเรือ", "ท่าลี่", "วังสะพุง", "ภูกระดึง", "ภูหลวง", "ผาขาว", "เอราวัณ", "หนองหิน"];
+    var ampCoords = { "เมืองเลย": [17.4860, 101.7223], "เชียงคาน": [17.8938, 101.6542], "ด่านซ้าย": [17.2713, 101.1491], "ปากชม": [18.0211, 101.8881], "นาด้วง": [17.4901, 101.9839], "ภูเรือ": [17.4552, 101.3621], "ท่าลี่": [17.6254, 101.4215], "วังสะพุง": [17.3015, 101.7681], "ภูกระดึง": [16.8837, 101.8839], "ภูหลวง": [17.1523, 101.6212], "ผาขาว": [17.0421, 102.0432], "เอราวัณ": [17.3421, 102.0123], "หนองหิน": [17.1023, 101.8542], "นาแห้ว": [17.4832, 101.0654] };
+
+    window.onload = function() {
+      initMap();
+      google.script.run.withSuccessHandler(function(res) {
+        if(!res) { alert('No response from server'); return; }
+        rawEq = res.equipment || [];
+        rawBd = res.building || [];
+        hospMap = res.hospMap || {};
+        document.getElementById('sys-version').innerText = res.version || '0.0.0';
+        document.getElementById('nav-version').innerText = 'v' + (res.version || '0.0.0');
+        document.getElementById('fYear').innerHTML = '<option value="All">ทุกปีงบประมาณ</option>' + (res.years || []).map(function(y) { return '<option value="'+y+'">'+y+'</option>'; }).join('');
+        document.getElementById('fAmphoe').innerHTML = '<option value="All">ทุกอำเภอ</option>' + (res.amphoes || []).map(function(a) { return '<option value="'+a+'">'+a+'</option>'; }).join('');
+        applyFilters();
+        document.getElementById('loader').style.display = 'none';
+      }).getInitialData();
+    };
+
+    function initMap() {
+      map = L.map('map').setView([17.45, 101.55], 8.5);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      fetch('https://raw.githubusercontent.com/chingchai/OpenGISData-Thailand/master/districts.geojson')
+        .then(function(res) { return res.json(); })
+        .then(function(json) {
+          L.geoJSON(json, {
+            filter: function(f) { return f.properties.pro_th === 'เลย'; },
+            style: { color: '#007B5E', weight: 2, fillOpacity: 0.05, dashArray: '4' }
+          }).addTo(map);
+        });
+    }
+
+    function resetFilters() {
+      document.getElementById('fYear').value = 'All';
+      document.getElementById('fAmphoe').value = 'All';
+      document.getElementById('fType').value = 'All';
+      document.getElementById('fUnit').value = 'All';
+      applyFilters();
+    }
+
+    function applyFilters() {
+      var fY = document.getElementById('fYear').value, fA = document.getElementById('fAmphoe').value, fT = document.getElementById('fType').value, fU = document.getElementById('fUnit').value;
+      var process = function(list, typeName) { 
+        return list.map(function(d) {
+          var id = String(d['รหัสหน่วยบริการ'] || '').trim();
+          var info = hospMap[id] || { distCode: 9999, unitType: '-', amphoe: '-' };
+          return Object.assign({}, d, info, { dataType: typeName });
+        }).filter(function(d) {
+          return (fY === 'All' || d['ปีงบประมาณ'] == fY) && (fA === 'All' || d.amphoe == fA) && (fU === 'All' || d.unitType == fU) && (d['การพิจารณา'] === 'ได้รับจัดสรร');
+        });
+      };
+      var eq = (fT === 'สิ่งก่อสร้าง') ? [] : process(rawEq, 'ครุภัณฑ์');
+      var bd = (fT === 'ครุภัณฑ์') ? [] : process(rawBd, 'สิ่งก่อสร้าง');
+      document.getElementById('c-eq-count').innerText = eq.length.toLocaleString();
+      document.getElementById('c-bd-count').innerText = bd.length.toLocaleString();
+      document.getElementById('c-eq-sum').innerText = eq.reduce(function(a,c){ return a + (Number(c['วงเงินรวม'])||0); }, 0).toLocaleString();
+      document.getElementById('c-bd-sum').innerText = bd.reduce(function(a,c){ return a + (Number(c['วงเงินรวม'])||0); }, 0).toLocaleString();
+      updateChart(eq, bd);
+      updateMap(eq, bd);
+      renderSummaryTables(eq, bd);
+    }
+
+    function renderSummaryTables(eq, bd) {
+      var configs = [{ label: 'กลุ่มครุภัณฑ์', color: 'blue', data: eq }, { label: 'กลุ่มสิ่งก่อสร้าง', color: 'emerald', data: bd }];
+      var unitTypes = ['บริการ (รพ.)', 'บริการ (ปฐมภูมิ)', 'บริหาร'];
+      var html = '';
+      configs.forEach(function(sec) {
+        html += '<h2 class="text-lg font-bold mb-4 mt-8 flex items-center text-'+sec.color+'-700 border-b border-'+sec.color+'-100 pb-2"><span class="w-1.5 h-6 bg-'+sec.color+'-500 rounded-full mr-2"></span>'+sec.label+'</h2>';
+        html += '<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">';
+        unitTypes.forEach(function(ut) {
+          var list = sec.data.filter(function(d) { return d.unitType === ut; });
+          var grouped = {};
+          var gCount = 0, gSum = 0;
+          list.forEach(function(i) {
+            var k = i.amphoe;
+            if(!grouped[k]) grouped[k] = { amp: i.amphoe, count: 0, sum: 0 };
+            grouped[k].count++; grouped[k].sum += (Number(i['วงเงินรวม'])||0);
+            gCount++; gSum += (Number(i['วงเงินรวม'])||0);
+          });
+          var sorted = districtOrder.filter(function(a) { return grouped[a]; }).map(function(a) { return grouped[a]; });
+          html += '<div class="table-container"><div class="p-3 px-4 font-bold text-[10px] border-b '+(ut === 'บริหาร' ? 'bg-amber-50 text-amber-800' : (sec.color === 'blue' ? 'bg-blue-50 text-blue-800' : 'bg-emerald-50 text-emerald-800'))+'">'+ut+'</div><div class="overflow-x-auto"><table class="w-full summary-table text-left"><thead><tr><th>อำเภอ</th><th class="text-center">รายการ</th><th class="text-right">งบรวม</th></tr></thead><tbody>' + (sorted.length ? sorted.map(function(r) { return '<tr><td class="font-bold text-gray-700">'+r.amp+'</td><td class="text-center">'+r.count.toLocaleString()+'</td><td class="text-right font-bold text-gray-800">'+r.sum.toLocaleString()+'</td></tr>'; }).join('') : '<tr><td colspan="3" class="text-center py-4 text-gray-400 italic text-xs">ไม่มีข้อมูลได้รับจัดสรร</td></tr>') + '</tbody><tfoot><tr><td class="text-gray-800">รวมทั้งสิ้น</td><td class="text-center text-gray-800">'+gCount.toLocaleString()+'</td><td class="text-right text-moph">'+gSum.toLocaleString()+'</td></tr></tfoot></table></div></div>';
+        });
+        html += '</div>';
+      });
+      document.getElementById('summary-section').innerHTML = html;
+    }
+
+    function updateMap(eq, bd) {
+      if(mapMarkers.length) { mapMarkers.forEach(function(m){ map.removeLayer(m); }); mapMarkers = []; }
+      var summ = {}; [].concat(eq, bd).forEach(function(d) { if(d.amphoe && d.amphoe !== '-') summ[d.amphoe] = (summ[d.amphoe]||0) + (Number(d['วงเงินรวม'])||0); });
+      var max = Math.max.apply(null, Object.values(summ).concat([1]));
+      Object.keys(ampCoords).forEach(function(n) {
+        var bud = summ[n]||0;
+        if(bud > 0) {
+          var m = L.circleMarker(ampCoords[n], { radius: Math.sqrt(bud/max)*35, fillColor: bud>(max*0.7)?"#dc2626":bud>(max*0.3)?"#f59e0b":"#10b981", color: "#fff", weight: 1.5, fillOpacity: 0.7 }).addTo(map).bindPopup('<b>อ. '+n+'</b><br>งบรวม: '+bud.toLocaleString()+' บาท');
+          mapMarkers.push(m);
+        }
+        L.marker(ampCoords[n], { icon: L.divIcon({ className: 'district-label', html: n, iconSize:[100,20], iconAnchor:[50,-10] }) }).addTo(map);
+      });
+    }
+
+    function updateChart(eq, bd) {
+      var ctx = document.getElementById('mophChart').getContext('2d');
+      var units = ['บริการ (รพ.)', 'บริหาร', 'บริการ (ปฐมภูมิ)'];
+      var getVal = function(list) { return units.map(function(u) { return list.filter(function(d) { return d.unitType === u; }).reduce(function(a, b) { return a + (Number(b['วงเงินรวม']) || 0); }, 0); }); };
+      if(myChart) myChart.destroy();
+      Chart.register(ChartDataLabels);
+      myChart = new Chart(ctx, { type: 'bar', data: { labels: units, datasets: [{ label: 'ครุภัณฑ์', data: getVal(eq), backgroundColor: '#3b82f6', borderRadius: 8 }, { label: 'สิ่งก่อสร้าง', data: getVal(bd), backgroundColor: '#10b981', borderRadius: 8 }]}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', align: 'start', labels: { font: { family: 'Prompt', size: 11 } } }, datalabels: { anchor: 'end', align: 'top', formatter: function(v){ return v > 0 ? v.toLocaleString() : ''; }, font: { weight: 'bold', family: 'Prompt', size: 10 } } } } });
+    }
+  </script>
+</body>
+</html>
