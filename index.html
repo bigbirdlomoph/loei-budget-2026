@@ -1,192 +1,1318 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <base target="_top">
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/th.js"></script>
+
   <style>
-    body { font-family: 'Prompt', sans-serif; background-color: #f1f5f9; }
-    .moph-green { background-color: #007B5E; }
-    .text-moph { color: #007B5E; }
-    #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
-    .loader-circle { width: 45px; height: 45px; border: 5px solid #f1f5f9; border-top: 5px solid #007B5E; border-radius: 50%; animation: spin 1s linear infinite; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    #map { height: 450px; width: 100%; border-radius: 1rem; z-index: 10; background: #fff; border: 1px solid #e2e8f0; }
-    .district-label { font-weight: 600; color: #334155; text-shadow: 1px 1px 2px white; text-align: center; font-size: 11px; pointer-events: none; }
-    .summary-table thead th { background-color: #f8fafc; color: #64748b; font-weight: 600; font-size: 0.65rem; padding: 0.5rem; border-bottom: 2px solid #e2e8f0; }
-    .summary-table tbody td { padding: 0.5rem; border-bottom: 1px solid #f1f5f9; font-size: 0.75rem; }
-    .summary-table tfoot td { padding: 0.5rem; font-weight: bold; background-color: #f8fafc; border-top: 2px solid #e2e8f0; font-size: 0.8rem; }
-    .table-container { background: white; border-radius: 1rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+    body {
+      font-family: 'Prompt', sans-serif;
+      background-color: #f1f5f9;
+      color: #334155;
+    }
+
+    .moph-green {
+      background-color: #007B5E;
+    }
+
+    #loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #e2e8f0;
+      border-top: 5px solid #007B5E;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    #map {
+      height: 400px;
+      width: 100%;
+      border-radius: 0.75rem;
+      z-index: 10;
+      border: 1px solid #e2e8f0;
+    }
+
+    .district-label {
+      font-weight: 700;
+      color: #1e293b;
+      font-size: 11px;
+      pointer-events: none;
+    }
+
+    .summary-table {
+      width: 100%;
+      text-align: left;
+      border-collapse: collapse;
+    }
+
+    .summary-table th {
+      background-color: #f8fafc;
+      color: #64748b;
+      font-weight: 600;
+      font-size: 0.75rem;
+      padding: 0.75rem;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .summary-table td {
+      padding: 0.75rem;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 0.85rem;
+      color: #475569;
+    }
+
+    .summary-table tfoot td {
+      font-weight: 700;
+      background-color: #f8fafc;
+      color: #1e293b;
+      border-top: 2px solid #e2e8f0;
+    }
+
+    .table-container {
+      background: white;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+
+    .table-header {
+      padding: 0.5rem 1rem;
+      font-weight: 700;
+      font-size: 0.75rem;
+    }
+
+    .filter-select,
+    .input-field {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      outline: none;
+    }
+
+    .filter-select:focus,
+    .input-field:focus {
+      border-color: #007B5E;
+      box-shadow: 0 0 0 1px #007B5E;
+    }
+
+    .card {
+      background: white;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 0.5rem;
+    }
+
+    .label-text {
+      display: block;
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-bottom: 0.25rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .report-table th {
+      background-color: #007B5E;
+      color: white;
+      padding: 10px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
+    .report-table td {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      font-size: 0.8rem;
+    }
+
+    .btn-edit {
+      background-color: #f59e0b;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      transition: 0.2s;
+    }
+
+    .btn-edit:hover {
+      background-color: #d97706;
+    }
+
+    .select2-container .select2-selection--single {
+      height: 38px;
+      border-color: #cbd5e1;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+      top: 6px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 3000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(2px);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 2% auto;
+      width: 95%;
+      max-width: 900px;
+      border-radius: 1rem;
+      overflow: hidden;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
   </style>
 </head>
+
 <body>
 
-  <div id="loader"><div class="loader-circle"></div><p class="mt-4 text-[#007B5E] font-medium text-sm">กำลังโหลด Dashboard...</p></div>
+  <div id="loader">
+    <div class="spinner"></div>
+    <p id="loader-text" class="mt-4 font-bold text-[#007B5E]">กำลังดาวน์โหลดข้อมูลระบบ...</p>
+    <p id="loader-subtext" class="text-xs text-gray-500 mt-2">โปรดรอสักครู่...</p>
+  </div>
 
-  <nav class="moph-green text-white p-4 shadow-lg sticky top-0 z-50">
-    <div class="container mx-auto flex items-center justify-between">
+  <nav class="moph-green text-white p-3 shadow-md sticky top-0 z-50">
+    <div class="container mx-auto flex justify-between items-center px-2">
       <div class="flex items-center space-x-3">
-        <div class="bg-white p-2 rounded-full shadow-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-[#007B5E]" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/>
+        <div class="bg-white p-1 rounded-full shadow-sm text-[#007B5E]">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
+            <path
+              d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z" />
           </svg>
         </div>
         <div>
-          <h1 class="text-lg font-semibold leading-tight">ระบบงบลงทุน สสจ.เลย <span id="nav-version" class="text-[10px] opacity-70 font-normal ml-2"></span></h1>
-          <p class="text-[10px] opacity-80 uppercase tracking-tighter">Loei Provincial Public Health Office</p>
+          <h1 class="text-lg font-bold leading-none">ระบบงบลงทุน สสจ.เลย</h1>
+          <span id="nav-version" class="text-[10px] opacity-70"></span>
         </div>
+      </div>
+      <div class="flex space-x-2">
+        <button onclick="switchPage('dashboard')" id="btn-nav-dash"
+          class="px-4 py-1.5 rounded bg-white/20 text-sm font-bold shadow-sm transition">Dashboard</button>
+        <button onclick="switchPage('report')" id="btn-nav-rep"
+          class="px-4 py-1.5 rounded hover:bg-white/10 text-sm text-white/80 transition">รายงานความก้าวหน้า</button>
+        <button onclick="switchPage('search')" id="btn-nav-src"
+          class="px-4 py-1.5 rounded hover:bg-white/10 text-sm text-white/80 transition">ค้นหาประวัติคำขอ</button>
+        <button onclick="switchPage('entry')" id="btn-nav-ent"
+          class="hidden px-4 py-1.5 rounded hover:bg-white/10 text-sm font-bold bg-white/10 transition border border-white/30">+
+          บันทึกใหม่</button>
       </div>
     </div>
   </nav>
 
-  <main class="container mx-auto p-4 md:p-6 lg:p-8">
-    
-    <section class="bg-white p-6 rounded-3xl shadow-sm mb-8 border border-gray-100 flex flex-col md:flex-row items-end gap-4">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 flex-grow w-full text-gray-700">
-        <div><label class="text-xs font-medium text-gray-400">ปีงบประมาณ</label><select id="fYear" onchange="applyFilters()" class="w-full border-gray-200 rounded-lg p-2 bg-gray-50 mt-1"></select></div>
-        <div><label class="text-xs font-medium text-gray-400">อำเภอ (4201-4214)</label><select id="fAmphoe" onchange="applyFilters()" class="w-full border-gray-200 rounded-lg p-2 bg-gray-50 mt-1"></select></div>
-        <div><label class="text-xs font-medium text-gray-400">ประเภทงบ</label><select id="fType" onchange="applyFilters()" class="w-full border-gray-200 rounded-lg p-2 bg-gray-50 mt-1"><option value="All">ทั้งหมด</option><option value="ครุภัณฑ์">ครุภัณฑ์</option><option value="สิ่งก่อสร้าง">สิ่งก่อสร้าง</option></select></div>
-        <div><label class="text-xs font-medium text-gray-400">ประเภทหน่วยงาน</label><select id="fUnit" onchange="applyFilters()" class="w-full border-gray-200 rounded-lg p-2 bg-gray-50 mt-1"><option value="All">ทั้งหมด</option><option value="บริการ (รพ.)">บริการ (รพ.)</option><option value="บริหาร">บริหาร</option><option value="บริการ (ปฐมภูมิ)">บริการ (ปฐมภูมิ)</option></select></div>
-      </div>
-      <button onclick="resetFilters()" class="bg-white hover:bg-gray-50 text-gray-500 px-6 py-2 rounded-lg text-sm font-medium transition-colors border border-gray-300 shadow-sm">ล้างค่า</button>
-    </section>
+  <main class="container mx-auto p-4 lg:p-6 pb-20">
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 text-gray-700">
-      <div class="bg-white p-5 rounded-2xl shadow-sm border-t-4 border-blue-500"><p class="text-gray-400 text-xs uppercase">จำนวนครุภัณฑ์</p><h3 id="c-eq-count" class="text-3xl font-bold mt-1">0</h3></div>
-      <div class="bg-white p-5 rounded-2xl shadow-sm border-t-4 border-amber-500"><p class="text-gray-400 text-xs uppercase">งบครุภัณฑ์รวม</p><h3 id="c-eq-sum" class="text-2xl font-bold mt-1">0</h3></div>
-      <div class="bg-white p-5 rounded-2xl shadow-sm border-t-4 border-emerald-500"><p class="text-gray-400 text-xs uppercase">จำนวนสิ่งก่อสร้าง</p><h3 id="c-bd-count" class="text-3xl font-bold mt-1">0</h3></div>
-      <div class="bg-white p-5 rounded-2xl shadow-sm border-t-4 border-rose-500"><p class="text-gray-400 text-xs uppercase">งบสิ่งก่อสร้างรวม</p><h3 id="c-bd-sum" class="text-2xl font-bold mt-1">0</h3></div>
+    <div id="page-dashboard">
+      <section
+        class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row items-end gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 flex-grow w-full">
+          <div><label class="block text-xs font-semibold text-gray-400 mb-1 uppercase">ปีงบประมาณ</label><select
+              id="fYear" onchange="applyFilters()" class="filter-select"></select></div>
+          <div><label class="block text-xs font-semibold text-gray-400 mb-1 uppercase">อำเภอ</label><select id="fAmphoe"
+              onchange="applyFilters()" class="filter-select"></select></div>
+          <div><label class="block text-xs font-semibold text-gray-400 mb-1 uppercase">ประเภทงบ</label><select
+              id="fType" onchange="applyFilters()" class="filter-select">
+              <option value="All">ทั้งหมด</option>
+              <option value="ครุภัณฑ์">ครุภัณฑ์</option>
+              <option value="สิ่งก่อสร้าง">สิ่งก่อสร้าง</option>
+            </select></div>
+          <div><label class="block text-xs font-semibold text-gray-400 mb-1 uppercase">ประเภทหน่วยงาน</label><select
+              id="fUnit" onchange="applyFilters()" class="filter-select">
+              <option value="All">ทั้งหมด</option>
+              <option value="บริการ (รพ.)">บริการ (รพ.)</option>
+              <option value="บริหาร">บริหาร</option>
+              <option value="บริการ (ปฐมภูมิ)">บริการ (ปฐมภูมิ)</option>
+            </select></div>
+        </div>
+        <button onclick="resetFilters()"
+          class="px-6 py-2 bg-white border border-gray-300 text-gray-600 font-medium rounded-lg hover:bg-gray-50 transition shadow-sm h-[38px] whitespace-nowrap flex items-center justify-center">ล้างค่า</button>
+      </section>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 lg:gap-6 mb-6">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-t-4 border-t-blue-500">
+          <p class="text-xs font-semibold text-gray-400 mb-1">จำนวนครุภัณฑ์ (รายการ)</p>
+          <h3 id="c-eq-count" class="text-3xl font-bold text-gray-800">0</h3>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-t-4 border-t-amber-400">
+          <p class="text-xs font-semibold text-gray-400 mb-1">งบครุภัณฑ์รวม (บาท)</p>
+          <h3 id="c-eq-sum" class="text-2xl font-bold text-gray-800">0</h3>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-t-4 border-t-emerald-500">
+          <p class="text-xs font-semibold text-gray-400 mb-1">จำนวนสิ่งก่อสร้าง (รายการ)</p>
+          <h3 id="c-bd-count" class="text-3xl font-bold text-gray-800">0</h3>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-t-4 border-t-rose-500">
+          <p class="text-xs font-semibold text-gray-400 mb-1">งบสิ่งก่อสร้างรวม (บาท)</p>
+          <h3 id="c-bd-sum" class="text-2xl font-bold text-gray-800">0</h3>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <h3 class="text-xs font-bold text-gray-800 mb-3 italic underline">แผนที่ขอบเขตอำเภอจังหวัดเลย</h3>
+          <div id="map"></div>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 min-h-[400px] flex flex-col">
+          <h3 class="text-sm font-bold text-gray-800 mb-4 text-center">สัดส่วนงบลงทุนรายประเภทหน่วยบริการ</h3>
+          <div class="flex-grow relative"><canvas id="mophChart"></canvas></div>
+        </div>
+      </div>
+      <div id="summary-section" class="space-y-10"></div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-      <div class="bg-white p-5 rounded-3xl shadow-sm border"><h3 class="font-bold text-gray-700 mb-4 italic underline text-xs">แผนที่ขอบเขตอำเภอจังหวัดเลย</h3><div id="map"></div></div>
-      <div class="bg-white p-5 rounded-3xl shadow-sm border min-h-[450px] flex flex-col">
-        <h3 class="font-bold text-gray-700 mb-4 text-center text-sm">สัดส่วนงบลงทุนรายประเภทหน่วยบริการ</h3>
-        <div class="flex-grow"><canvas id="mophChart"></canvas></div>
+    <div id="page-report" class="hidden">
+      <div class="flex mb-4 border-b">
+        <button onclick="setReportType('ครุภัณฑ์')" id="tab-eq"
+          class="px-6 py-2 font-bold text-[#007B5E] border-b-2 border-[#007B5E]">ครุภัณฑ์</button>
+        <button onclick="setReportType('สิ่งก่อสร้าง')" id="tab-bd"
+          class="px-6 py-2 font-bold text-gray-500 hover:text-[#007B5E]">สิ่งก่อสร้าง</button>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border flex gap-4 items-end">
+        <div class="flex-grow grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div><label class="label-text">ปีงบประมาณ</label><select id="rptYear" class="input-field select2-init"
+              onchange="renderReportTable()"></select></div>
+          <div><label class="label-text">อำเภอ</label><select id="rptAmphoe" class="input-field select2-init"
+              onchange="renderReportTable()"></select></div>
+          <div><label class="label-text">ค้นหา</label><input type="text" id="rptSearch" class="input-field"
+              onkeyup="renderReportTable()" placeholder="ค้นหาชื่อรายการ/โรงพยาบาล..."></div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <div class="overflow-x-auto max-h-[600px]">
+          <table class="w-full report-table">
+            <thead id="rpt-thead" class="sticky top-0 z-10"></thead>
+            <tbody id="rpt-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <div id="summary-section" class="space-y-16"></div>
+    <div id="page-search" class="hidden">
+      <!-- Search Page Top Filters -->
+      <section
+        class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row items-end gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 flex-grow w-full">
+          <div><label class="block text-xs font-semibold text-gray-400 mb-1 uppercase">ปีงบประมาณ</label><select
+              id="srcYear" class="filter-select select2-init" onchange="renderSearchTable()">
+              <option value="All">ทั้งหมด</option>
+            </select></div>
+          <div><label class="block text-xs font-semibold text-gray-400 mb-1 uppercase">อำเภอ</label><select
+              id="srcAmphoe" class="filter-select select2-init" onchange="renderSearchTable()">
+              <option value="All">ทั้งหมด</option>
+            </select></div>
+          <div><label class="block text-xs font-semibold text-gray-400 mb-1 uppercase">หน่วยบริการ</label><select
+              id="srcHosp" class="filter-select select2-init" onchange="renderSearchTable()">
+              <option value="All">ทั้งหมด</option>
+            </select></div>
+          <div><label class="block text-xs font-semibold text-gray-400 mb-1 uppercase">ค้นหาคำศัพท์</label><input
+              type="text" id="srcKeyword" class="input-field" placeholder="ชื่อรายการ/เครื่องมือ..."
+              onkeyup="renderSearchTable()"></div>
+        </div>
+        <button
+          onclick="document.getElementById('srcYear').value='All'; document.getElementById('srcAmphoe').value='All'; document.getElementById('srcHosp').value='All'; document.getElementById('srcKeyword').value=''; try{ $('.select2-init').trigger('change'); }catch(e){} renderSearchTable();"
+          class="px-6 py-2 bg-white border border-gray-300 text-gray-600 font-medium rounded-lg hover:bg-gray-50 transition shadow-sm h-[38px] whitespace-nowrap flex items-center justify-center">ล้างค่า</button>
+      </section>
 
-    <div class="text-right text-[10px] text-gray-300 italic mt-8 border-t pt-4">Status: <span id="sys-version"></span></div>
+      <!-- Search Page Data Table Container -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border mb-4">
+        <div class="flex border-b pb-2 mb-2 gap-2">
+          <button onclick="setSearchType('ครุภัณฑ์')" id="tab-src-eq"
+            class="px-6 py-2 font-bold text-[#007B5E] border-b-2 border-[#007B5E]">ครุภัณฑ์</button>
+          <button onclick="setSearchType('สิ่งก่อสร้าง')" id="tab-src-bd"
+            class="px-6 py-2 font-bold text-gray-500 hover:text-[#007B5E]">สิ่งก่อสร้าง</button>
+        </div>
+
+        <!-- Summary Cards for Search Page -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4" id="src-summary-cards">
+          <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col justify-center items-center">
+            <p class="text-xs font-semibold text-blue-600 mb-1" id="src-sum-title">จำนวนรายการทั้งหมด</p>
+            <h3 id="src-sum-count" class="text-2xl font-bold text-blue-800">0</h3>
+          </div>
+          <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex flex-col justify-center items-center">
+            <p class="text-xs font-semibold text-emerald-600 mb-1">วงเงินรวม (บาท)</p>
+            <h3 id="src-sum-budget" class="text-2xl font-bold text-emerald-800">0.00</h3>
+          </div>
+          <div class="bg-amber-50 p-4 rounded-xl border border-amber-100 flex flex-col justify-center items-center">
+            <p class="text-xs font-semibold text-amber-600 mb-1">ได้รับการจัดสรร (รายการ)</p>
+            <h3 id="src-sum-approved" class="text-2xl font-bold text-amber-800">0</h3>
+          </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg border mb-2 hidden"
+          id="src-pagination-wrapper">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-gray-500">แสดง</span>
+            <select id="srcItemsPerPage" class="text-sm border-gray-300 rounded p-1 outline-none text-gray-700"
+              onchange="changeSearchItemsPerPage()">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="all">ทั้งหมด</option>
+            </select>
+            <span class="text-xs font-semibold text-gray-500">รายการ</span>
+          </div>
+          <div class="flex items-center gap-1 text-sm" id="src-pagination-controls">
+          </div>
+        </div>
+
+        <div id="search-loading" class="text-center py-10 text-gray-500 font-bold hidden">
+          <div class="spinner border-[#007B5E] border-t-transparent mx-auto mb-4"
+            style="border-top-color:#007B5E; width:30px; height:30px;"></div>
+          กำลังโหลดข้อมูลประวัติคำขอ...
+        </div>
+
+        <div class="overflow-x-auto max-h-[600px] mt-4">
+          <table class="w-full report-table" id="search-table-container">
+            <thead class="sticky top-0 z-10 bg-[#007B5E] text-white">
+              <tr>
+                <th class="p-2 text-sm font-semibold">หน่วยบริการ</th>
+                <th class="p-2 text-sm font-semibold">อำเภอ</th>
+                <th class="p-2 text-sm font-semibold">ระดับหน่วยบริการเดิม</th>
+                <th class="p-2 text-sm font-semibold">ระดับ SAP</th>
+                <th class="p-2 text-center text-sm font-semibold">ปีงบ</th>
+                <th class="p-2 w-1/4 text-sm font-semibold text-left">ชื่อรายการ</th>
+                <th class="p-2 text-right text-sm font-semibold">วงเงิน (บาท)</th>
+                <th class="p-2 text-center text-sm font-semibold">การพิจารณา</th>
+              </tr>
+            </thead>
+            <tbody id="src-tbody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="page-entry" class="hidden max-w-5xl mx-auto">
+      <form id="entryForm">
+        <div class="flex justify-center mb-6">
+          <div class="bg-white p-1 rounded-xl shadow-sm border inline-flex">
+            <button type="button" onclick="setEntryType('ครุภัณฑ์')" id="btn-ent-eq"
+              class="px-6 py-2 rounded-lg text-sm font-bold bg-[#007B5E] text-white shadow">ครุภัณฑ์</button>
+            <button type="button" onclick="setEntryType('สิ่งก่อสร้าง')" id="btn-ent-bd"
+              class="px-6 py-2 rounded-lg text-sm font-bold text-gray-500 hover:bg-gray-50">สิ่งก่อสร้าง</button>
+          </div>
+          <input type="hidden" id="entType" value="ครุภัณฑ์">
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="card lg:col-span-2">
+            <h3 class="card-title">📝 1. ข้อมูลหลัก</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div><label class="label-text">ปีงบประมาณ</label><select id="entYear"
+                  class="input-field bg-gray-50 font-bold text-[#007B5E]"></select></div>
+              <div class="md:col-span-3"><label class="label-text">หน่วยบริการ</label><select id="entHospId"
+                  class="w-full"></select></div>
+              <div class="md:col-span-2"><label class="label-text">ชื่อรายการ <span
+                    class="text-red-500">*</span></label><input type="text" id="entName" class="input-field"></div>
+              <div><label class="label-text">ประเภทย่อย</label><input type="text" id="entSubType" class="input-field">
+              </div>
+              <div><label class="label-text">หน่วยนับ</label><input type="text" id="entUnit" class="input-field"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">💰 2. งบประมาณ</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div><label class="label-text">ราคาต่อหน่วย</label><input type="number" id="entPrice"
+                  class="input-field text-right" oninput="calcEntTotal()"></div>
+              <div><label class="label-text">จำนวน</label><input type="number" id="entQty"
+                  class="input-field text-center" oninput="calcEntTotal()"></div>
+              <div class="col-span-2"><label class="label-text text-[#007B5E]">วงเงินรวม</label><input type="text"
+                  id="entTotal" class="input-field bg-gray-50 text-right font-bold text-[#007B5E]" readonly></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">⚖️ 3. การจัดซื้อ</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="col-span-2"><label class="label-text">วิธีจัดซื้อ</label><select id="entMethod"
+                  class="input-field" onchange="updateEntProcStep()"></select></div>
+              <div class="col-span-2"><label class="label-text">วงเงินจัดหาได้ (T/V)</label><input type="number"
+                  id="entAlloc" class="input-field text-right bg-blue-50 text-blue-700 font-bold"
+                  oninput="calcEntBalance()"></div>
+            </div>
+          </div>
+
+          <div class="card lg:col-span-2 bg-yellow-50 border-yellow-200">
+            <h3 class="card-title text-yellow-800 border-yellow-200">💸 4. การเบิกจ่าย</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div><label class="label-text">ยอดเบิกจ่าย</label><input type="number" id="entPaid"
+                  class="input-field text-right" oninput="calcEntBalance()"></div>
+              <div><label class="label-text text-red-600">คงเหลือ</label><input type="text" id="entBalance"
+                  class="input-field text-right font-bold text-red-600 bg-white" readonly></div>
+              <div><label class="label-text">สถานะเบิกจ่าย</label><select id="entSpentStatus"
+                  class="input-field"></select></div>
+            </div>
+          </div>
+
+          <div class="card lg:col-span-2">
+            <h3 class="card-title">📈 5. สถานะงาน</h3>
+            <div id="ent-building-fields"
+              class="hidden grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 p-4 bg-gray-50 rounded border">
+              <div><label class="label-text">งวดงานทั้งหมด</label><input type="number" id="entTotalPeriod"
+                  class="input-field"></div>
+              <div><label class="label-text">งวดปัจจุบัน</label><input type="number" id="entCurrentPeriod"
+                  class="input-field"></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="md:col-span-2"><label class="label-text">ขั้นตอนจัดซื้อ</label><select id="entProcStep"
+                  class="input-field bg-blue-50"></select></div>
+              <div><label class="label-text">สถานะดำเนินการ</label><select id="entStatus" class="input-field"></select>
+              </div>
+              <div class="md:col-span-3"><label class="label-text">หมายเหตุ</label><input type="text" id="entRemark"
+                  class="input-field"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" onclick="document.getElementById('entryForm').reset()"
+            class="px-6 py-2.5 rounded-lg border font-bold text-gray-500 bg-white">ล้างค่า</button>
+          <button type="button" onclick="saveNewEntry()"
+            class="px-8 py-2.5 rounded-lg bg-[#007B5E] text-white shadow-lg font-bold hover:bg-[#00634a]">บันทึกข้อมูล</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="editModal" class="modal">
+      <div class="modal-content overflow-y-auto">
+        <div class="bg-[#007B5E] p-4 text-white flex justify-between items-center sticky top-0 z-10">
+          <h3 class="font-bold text-lg">แก้ไขข้อมูลรายการ</h3>
+          <button onclick="closeModal()" class="text-2xl hover:text-gray-200">&times;</button>
+        </div>
+        <div class="p-6">
+          <form id="editForm">
+            <input type="hidden" id="edtId"><input type="hidden" id="edtType">
+            <div class="bg-gray-50 p-4 rounded-lg border mb-6 grid grid-cols-2 gap-4">
+              <div><label class="label-text uppercase">ชื่อรายการ</label>
+                <div id="edtName" class="font-bold text-gray-800 text-sm mt-1">-</div>
+              </div>
+              <div><label class="label-text uppercase">หน่วยบริการ</label>
+                <div id="edtHosp" class="font-bold text-gray-800 text-sm mt-1">-</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div><label class="label-text font-bold text-gray-700">วิธีจัดซื้อ</label><select id="edtMethod"
+                  class="input-field mt-1" onchange="updateEdtProcStep()"></select></div>
+              <div><label class="label-text font-bold text-gray-700">วงเงินจัดหาได้</label><input type="text"
+                  id="edtContract" class="input-field mt-1 text-right money2" inputmode="decimal"></div>
+              <div><label class="label-text font-bold text-gray-700">ทำถึงขั้นตอนการจัดซื้อจัดจ้าง</label><select
+                  id="edtProcStep" class="input-field mt-1"></select></div>
+              <div><label class="label-text font-bold text-gray-700">สถานะการดำเนินการ</label><select id="edtStatus"
+                  class="input-field mt-1"></select></div>
+            </div>
+
+            <!-- หมวดหมู่สิ่งก่อสร้าง ซ่อนอยู่โดยดีฟอลต์ -->
+            <div id="edt-building-fields" class="hidden mt-4 p-4 bg-gray-50 rounded border">
+              <h4 class="font-bold text-xs text-[#007B5E] mb-3 uppercase border-b pb-1">ข้อมูลความก้าวหน้าสิ่งก่อสร้าง
+              </h4>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div><label class="label-text">งวดงานทั้งสิ้น</label><input type="number" id="edtTotalPeriod"
+                    class="input-field"></div>
+                <div><label class="label-text">จำนวนงวดงานในปี</label><input type="number" id="edtYearPeriod"
+                    class="input-field"></div>
+                <div><label class="label-text">ปัจจุบันดำเนินการถึงงวด</label><input type="number" id="edtCurrentPeriod"
+                    class="input-field"></div>
+                <div><label class="label-text">จำนวนงวดงานที่ล่าช้า</label><input type="number" id="edtDelayPeriod"
+                    class="input-field"></div>
+                <div class="md:col-span-4"><label class="label-text">สาเหตุความล่าช้า</label><textarea
+                    id="edtDelayReason" class="input-field" rows="2"></textarea></div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
+              <div><label class="label-text font-bold text-gray-700">วันลงนามในสัญญา</label><input type="text"
+                  id="edtContractSignDate" class="input-field mt-1 datepick" readonly></div>
+              <div><label class="label-text font-bold text-gray-700">วันสิ้นสุดสัญญา</label><input type="text"
+                  id="edtContractEndDate" class="input-field mt-1 datepick" readonly></div>
+              <div><label class="label-text font-bold text-gray-700">วันส่งมอบ</label><input type="text"
+                  id="edtDeliveryDate" class="input-field mt-1 datepick" readonly></div>
+              <div><label class="label-text font-bold text-gray-700">วันตรวจรับ</label><input type="text"
+                  id="edtInspectionDate" class="input-field mt-1 datepick" readonly></div>
+              <div><label class="label-text font-bold text-gray-700">วันเบิกจ่าย</label><input type="text"
+                  id="edtPaymentDate" class="input-field mt-1 datepick" readonly></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
+              <div><label class="label-text font-bold text-gray-700">จำนวนเงินที่เบิกจ่าย</label><input type="text"
+                  id="edtSpentAmount" class="input-field mt-1 text-right money2" inputmode="decimal"
+                  oninput="updateRemaining()"></div>
+              <div><label class="label-text font-bold text-gray-700">จำนวนเงินคงเหลือ</label><input type="text"
+                  id="edtRemaining" class="input-field mt-1 text-right bg-gray-50 font-bold" readonly></div>
+              <div><label class="label-text font-bold text-gray-700">สถานะการเบิกจ่าย</label><select id="edtSpentStatus"
+                  class="input-field mt-1"></select></div>
+              <div><label class="label-text font-bold text-gray-700">สถานะความเสี่ยง</label><select id="edtRisk"
+                  class="input-field mt-1"></select></div>
+            </div>
+
+            <div class="mt-4">
+              <label class="label-text font-bold text-gray-700">หมายเหตุ</label>
+              <textarea id="edtNote" class="input-field mt-1" rows="3"
+                placeholder="ระบุหมายเหตุเพิ่มเติม..."></textarea>
+            </div>
+          </form>
+
+        </div>
+        <div class="p-4 bg-gray-100 flex justify-end gap-3 sticky bottom-0">
+          <button onclick="closeModal()"
+            class="px-6 py-2 rounded-lg bg-white border font-bold text-gray-500">ยกเลิก</button>
+          <button onclick="saveEdit()"
+            class="px-6 py-2 rounded-lg bg-[#007B5E] text-white font-bold hover:bg-[#00634a]">บันทึกการแก้ไข</button>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <script>
-    var rawEq = [], rawBd = [], hospMap = {}, myChart = null, map = null, mapMarkers = [];
+    var appData = { dashboard: { eq: [], bd: [] }, report: { eq: [], bd: [] }, search: null, options: {} };
+    var currentRptType = 'ครุภัณฑ์';
+    var currentSrcType = 'ครุภัณฑ์';
+    var srcCurrentPage = 1;
+    var srcItemsPerPage = 10;
     var districtOrder = ["เมืองเลย", "นาด้วง", "เชียงคาน", "ปากชม", "ด่านซ้าย", "นาแห้ว", "ภูเรือ", "ท่าลี่", "วังสะพุง", "ภูกระดึง", "ภูหลวง", "ผาขาว", "เอราวัณ", "หนองหิน"];
     var ampCoords = { "เมืองเลย": [17.4860, 101.7223], "เชียงคาน": [17.8938, 101.6542], "ด่านซ้าย": [17.2713, 101.1491], "ปากชม": [18.0211, 101.8881], "นาด้วง": [17.4901, 101.9839], "ภูเรือ": [17.4552, 101.3621], "ท่าลี่": [17.6254, 101.4215], "วังสะพุง": [17.3015, 101.7681], "ภูกระดึง": [16.8837, 101.8839], "ภูหลวง": [17.1523, 101.6212], "ผาขาว": [17.0421, 102.0432], "เอราวัณ": [17.3421, 102.0123], "หนองหิน": [17.1023, 101.8542], "นาแห้ว": [17.4832, 101.0654] };
 
-    window.onload = function() {
+    // รูปแบบการโหลดที่เรียบง่ายและเสถียรที่สุด (เหมือนเวอร์ชันแรกที่เคยรันผ่าน)
+    window.onload = function () {
       initMap();
-      google.script.run.withSuccessHandler(function(res) {
-        if(!res) { alert('No response from server'); return; }
-        rawEq = res.equipment || [];
-        rawBd = res.building || [];
-        hospMap = res.hospMap || {};
-        document.getElementById('sys-version').innerText = res.version || '0.0.0';
-        document.getElementById('nav-version').innerText = 'v' + (res.version || '0.0.0');
-        document.getElementById('fYear').innerHTML = '<option value="All">ทุกปีงบประมาณ</option>' + (res.years || []).map(function(y) { return '<option value="'+y+'">'+y+'</option>'; }).join('');
-        document.getElementById('fAmphoe').innerHTML = '<option value="All">ทุกอำเภอ</option>' + (res.amphoes || []).map(function(a) { return '<option value="'+a+'">'+a+'</option>'; }).join('');
-        applyFilters();
-        document.getElementById('loader').style.display = 'none';
-      }).getInitialData();
+
+      // 1. โหลดข้อมูล Dashboard
+      google.script.run
+        .withSuccessHandler(function (res) {
+          if (res.error) {
+            document.getElementById('loader-text').innerHTML = `<span style="color:red;">Error Loading Dashboard</span>`;
+            document.getElementById('loader-subtext').innerText = res.error;
+            return;
+          }
+
+          appData.dashboard = res;
+          document.getElementById('nav-version').innerText = 'v' + (res.version || '');
+          const yrOpts = '<option value="All">ทุกปีงบประมาณ</option>' + (res.years || []).map(y => `<option value="${y}">${y}</option>`).join('');
+          const ampOpts = '<option value="All">ทุกอำเภอ</option>' + (res.amphoes || []).map(a => `<option value="${a}">${a}</option>`).join('');
+          document.getElementById('fYear').innerHTML = yrOpts; document.getElementById('rptYear').innerHTML = yrOpts;
+          document.getElementById('fAmphoe').innerHTML = ampOpts; document.getElementById('rptAmphoe').innerHTML = ampOpts;
+
+          const curYear = new Date().getFullYear() + 543;
+          $('#entYear').html(`<option>${curYear + 1}</option><option selected>${curYear}</option><option>${curYear - 1}</option>`);
+
+          applyFilters();
+          document.getElementById('loader').style.display = 'none'; // ปิด Loader!
+          try { initDatePickers(document); } catch (e) { }
+
+          // 2. โหลด Options และ Report เบื้องหลัง
+          google.script.run.withSuccessHandler(r => { if (!r.error) { appData.options = r; initOptionsUI(); } }).getFormOptions();
+          google.script.run.withSuccessHandler(r => { if (!r.error) { appData.report = r; renderReportTable(); } }).getReportData();
+
+          // 3. โหลด Search History เบื้องหลัง
+          document.getElementById('search-loading').classList.remove('hidden');
+          document.getElementById('search-table-container').classList.add('hidden');
+          google.script.run.withSuccessHandler(r => {
+            if (!r.error) {
+              appData.search = r;
+              initSearchUI();
+            }
+          }).getSearchData();
+        })
+        .withFailureHandler(function (err) {
+          document.getElementById('loader-text').innerHTML = `<span style="color:red;">Server Connection Failed</span>`;
+          document.getElementById('loader-subtext').innerText = err;
+        })
+        .getInitialData();
     };
 
-    function initMap() {
-      map = L.map('map').setView([17.45, 101.55], 8.5);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-      fetch('https://raw.githubusercontent.com/chingchai/OpenGISData-Thailand/master/districts.geojson')
-        .then(function(res) { return res.json(); })
-        .then(function(json) {
-          L.geoJSON(json, {
-            filter: function(f) { return f.properties.pro_th === 'เลย'; },
-            style: { color: '#007B5E', weight: 2, fillOpacity: 0.05, dashArray: '4' }
-          }).addTo(map);
-        });
+    // --- NAVIGATION ---
+    function switchPage(page) {
+      $('#page-dashboard, #page-report, #page-entry, #page-search').addClass('hidden');
+      $('#page-' + page).removeClass('hidden');
+
+      $('#btn-nav-dash, #btn-nav-rep, #btn-nav-ent, #btn-nav-src').removeClass('bg-white/20 font-bold text-white shadow-sm').addClass('hover:bg-white/10 text-white/80 border-transparent').removeClass('border-white/30');
+
+      if (page === 'dashboard') {
+        $('#btn-nav-dash').addClass('bg-white/20 font-bold text-white shadow-sm').removeClass('hover:bg-white/10 text-white/80 border-transparent');
+        setTimeout(() => { if (map) map.invalidateSize(); }, 200);
+      } else if (page === 'report') {
+        $('#btn-nav-rep').addClass('bg-white/20 font-bold text-white shadow-sm').removeClass('hover:bg-white/10 text-white/80 border-transparent');
+        renderReportTable();
+      } else if (page === 'search') {
+        $('#btn-nav-src').addClass('bg-white/20 font-bold text-white shadow-sm').removeClass('hover:bg-white/10 text-white/80 border-transparent');
+        renderSearchTable();
+      } else if (page === 'entry') {
+        $('#btn-nav-ent').addClass('bg-white/20 font-bold text-white border-white/30').removeClass('hover:bg-white/10 text-white/80 border-transparent');
+      }
     }
 
+    // --- DASHBOARD UI ---
     function resetFilters() {
-      document.getElementById('fYear').value = 'All';
-      document.getElementById('fAmphoe').value = 'All';
-      document.getElementById('fType').value = 'All';
-      document.getElementById('fUnit').value = 'All';
+      document.getElementById('fYear').value = 'All'; document.getElementById('fAmphoe').value = 'All';
+      document.getElementById('fType').value = 'All'; document.getElementById('fUnit').value = 'All';
       applyFilters();
     }
 
     function applyFilters() {
-      var fY = document.getElementById('fYear').value, fA = document.getElementById('fAmphoe').value, fT = document.getElementById('fType').value, fU = document.getElementById('fUnit').value;
-      var process = function(list, typeName) { 
-        return list.map(function(d) {
-          var id = String(d['รหัสหน่วยบริการ'] || '').trim();
-          var info = hospMap[id] || { distCode: 9999, unitType: '-', amphoe: '-' };
-          return Object.assign({}, d, info, { dataType: typeName });
-        }).filter(function(d) {
-          return (fY === 'All' || d['ปีงบประมาณ'] == fY) && (fA === 'All' || d.amphoe == fA) && (fU === 'All' || d.unitType == fU) && (d['การพิจารณา'] === 'ได้รับจัดสรร');
-        });
-      };
-      var eq = (fT === 'สิ่งก่อสร้าง') ? [] : process(rawEq, 'ครุภัณฑ์');
-      var bd = (fT === 'ครุภัณฑ์') ? [] : process(rawBd, 'สิ่งก่อสร้าง');
-      document.getElementById('c-eq-count').innerText = eq.length.toLocaleString();
-      document.getElementById('c-bd-count').innerText = bd.length.toLocaleString();
-      document.getElementById('c-eq-sum').innerText = eq.reduce(function(a,c){ return a + (Number(c['วงเงินรวม'])||0); }, 0).toLocaleString();
-      document.getElementById('c-bd-sum').innerText = bd.reduce(function(a,c){ return a + (Number(c['วงเงินรวม'])||0); }, 0).toLocaleString();
-      updateChart(eq, bd);
-      updateMap(eq, bd);
-      renderSummaryTables(eq, bd);
+      if (!appData.dashboard.equipment) return;
+      const fY = document.getElementById('fYear').value, fA = document.getElementById('fAmphoe').value;
+      const fT = document.getElementById('fType').value, fU = document.getElementById('fUnit').value;
+
+      const filterData = (list) => list.filter(d => (fY === 'All' || d.year === fY) && (fA === 'All' || d.amphoe === fA) && (fU === 'All' || d.unitType === fU));
+
+      const eqFiltered = (fT === 'สิ่งก่อสร้าง') ? [] : filterData(appData.dashboard.equipment);
+      const bdFiltered = (fT === 'ครุภัณฑ์') ? [] : filterData(appData.dashboard.building);
+
+      document.getElementById('c-eq-count').innerText = eqFiltered.length.toLocaleString();
+      document.getElementById('c-bd-count').innerText = bdFiltered.length.toLocaleString();
+      document.getElementById('c-eq-sum').innerText = eqFiltered.reduce((sum, d) => sum + d.totalBudget, 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
+      document.getElementById('c-bd-sum').innerText = bdFiltered.reduce((sum, d) => sum + d.totalBudget, 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
+
+      updateChart(eqFiltered, bdFiltered); updateMap(eqFiltered, bdFiltered); renderSummaryTables(eqFiltered, bdFiltered);
+    }
+
+    var map, mapMarkers = [];
+    function initMap() {
+      if (typeof L === 'undefined') return;
+      map = L.map('map').setView([17.45, 101.55], 8.5);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      fetch('https://raw.githubusercontent.com/chingchai/OpenGISData-Thailand/master/districts.geojson').then(r => r.json()).then(data => { L.geoJSON(data, { filter: f => f.properties.pro_th === 'เลย', style: { color: '#007B5E', weight: 2, fillOpacity: 0.02, dashArray: '5, 5' } }).addTo(map); }).catch(e => { });
+    }
+
+    function updateMap(eq, bd) {
+      if (!map) return;
+      if (mapMarkers.length) { mapMarkers.forEach(m => map.removeLayer(m)); mapMarkers = []; }
+      var summ = {};[...eq, ...bd].forEach(d => { if (d.amphoe && d.amphoe !== '-') summ[d.amphoe] = (summ[d.amphoe] || 0) + d.totalBudget; });
+      var max = Math.max(...Object.values(summ), 1);
+      Object.keys(ampCoords).forEach(n => {
+        var bud = summ[n] || 0;
+        if (bud > 0) {
+          let color = "#10b981"; if (bud > max * 0.6) color = "#ef4444"; else if (bud > max * 0.3) color = "#f59e0b";
+          var m = L.circleMarker(ampCoords[n], { radius: Math.max(Math.sqrt(bud / max) * 35, 8), fillColor: color, color: "#fff", weight: 2, fillOpacity: 0.8 }).addTo(map).bindPopup(`<b>อ. ${n}</b><br>งบรวม: ${bud.toLocaleString()} บาท`);
+          mapMarkers.push(m);
+        }
+      });
+    }
+
+    var myChart;
+    function updateChart(eq, bd) {
+      if (typeof Chart === 'undefined') return;
+      var ctx = document.getElementById('mophChart').getContext('2d');
+      var units = ['บริการ (รพ.)', 'บริหาร', 'บริการ (ปฐมภูมิ)'];
+      var getSum = (arr, uType) => arr.filter(d => d.unitType === uType).reduce((a, b) => a + b.totalBudget, 0);
+      var dEq = units.map(u => getSum(eq, u)); var dBd = units.map(u => getSum(bd, u));
+
+      if (myChart) myChart.destroy();
+      try { Chart.register(ChartDataLabels); } catch (e) { }
+      myChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: units, datasets: [{ label: 'ครุภัณฑ์', data: dEq, backgroundColor: '#3b82f6', borderRadius: 6 }, { label: 'สิ่งก่อสร้าง', data: dBd, backgroundColor: '#10b981', borderRadius: 6 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'top', align: 'start', labels: { font: { family: 'Prompt', size: 11 } } }, datalabels: { anchor: 'end', align: 'top', formatter: v => v > 0 ? (v / 1000000).toLocaleString(undefined, { maximumFractionDigits: 1 }) + 'M' : '', font: { weight: 'bold', family: 'Prompt', size: 10 } } },
+          scales: { y: { beginAtZero: true, ticks: { callback: v => (v / 1000000) + 'M' } } }
+        }
+      });
     }
 
     function renderSummaryTables(eq, bd) {
-      var configs = [{ label: 'กลุ่มครุภัณฑ์', color: 'blue', data: eq }, { label: 'กลุ่มสิ่งก่อสร้าง', color: 'emerald', data: bd }];
-      var unitTypes = ['บริการ (รพ.)', 'บริการ (ปฐมภูมิ)', 'บริหาร'];
+      var configs = [{ title: 'กลุ่มครุภัณฑ์', color: 'blue', data: eq }, { title: 'กลุ่มสิ่งก่อสร้าง', color: 'emerald', data: bd }];
+      var unitTypes = [{ label: 'บริการ (รพ.)', key: 'บริการ (รพ.)', bg: 'bg-blue-50', text: 'text-blue-800' }, { label: 'บริหาร', key: 'บริหาร', bg: 'bg-amber-50', text: 'text-amber-800' }, { label: 'บริการ (ปฐมภูมิ)', key: 'บริการ (ปฐมภูมิ)', bg: 'bg-emerald-50', text: 'text-emerald-800' }];
       var html = '';
-      configs.forEach(function(sec) {
-        html += '<h2 class="text-lg font-bold mb-4 mt-8 flex items-center text-'+sec.color+'-700 border-b border-'+sec.color+'-100 pb-2"><span class="w-1.5 h-6 bg-'+sec.color+'-500 rounded-full mr-2"></span>'+sec.label+'</h2>';
-        html += '<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">';
-        unitTypes.forEach(function(ut) {
-          var list = sec.data.filter(function(d) { return d.unitType === ut; });
-          var grouped = {};
-          var gCount = 0, gSum = 0;
-          list.forEach(function(i) {
-            var k = i.amphoe;
-            if(!grouped[k]) grouped[k] = { amp: i.amphoe, count: 0, sum: 0 };
-            grouped[k].count++; grouped[k].sum += (Number(i['วงเงินรวม'])||0);
-            gCount++; gSum += (Number(i['วงเงินรวม'])||0);
+      configs.forEach(sec => {
+        html += `<div class="mb-8"><h2 class="text-xl font-bold mb-4 flex items-center text-${sec.color}-700 border-l-4 border-${sec.color}-500 pl-3">${sec.title}</h2><div class="grid grid-cols-1 lg:grid-cols-3 gap-6">`;
+        unitTypes.forEach(ut => {
+          var list = sec.data.filter(d => d.unitType === ut.key);
+          var grouped = {}; var totalItems = 0, totalSum = 0;
+          list.forEach(item => {
+            if (!grouped[item.amphoe]) grouped[item.amphoe] = { amp: item.amphoe, count: 0, sum: 0 };
+            grouped[item.amphoe].count++; grouped[item.amphoe].sum += item.totalBudget;
+            totalItems++; totalSum += item.totalBudget;
           });
-          var sorted = districtOrder.filter(function(a) { return grouped[a]; }).map(function(a) { return grouped[a]; });
-          html += '<div class="table-container"><div class="p-3 px-4 font-bold text-[10px] border-b '+(ut === 'บริหาร' ? 'bg-amber-50 text-amber-800' : (sec.color === 'blue' ? 'bg-blue-50 text-blue-800' : 'bg-emerald-50 text-emerald-800'))+'">'+ut+'</div><div class="overflow-x-auto"><table class="w-full summary-table text-left"><thead><tr><th>อำเภอ</th><th class="text-center">รายการ</th><th class="text-right">งบรวม</th></tr></thead><tbody>' + (sorted.length ? sorted.map(function(r) { return '<tr><td class="font-bold text-gray-700">'+r.amp+'</td><td class="text-center">'+r.count.toLocaleString()+'</td><td class="text-right font-bold text-gray-800">'+r.sum.toLocaleString()+'</td></tr>'; }).join('') : '<tr><td colspan="3" class="text-center py-4 text-gray-400 italic text-xs">ไม่มีข้อมูลได้รับจัดสรร</td></tr>') + '</tbody><tfoot><tr><td class="text-gray-800">รวมทั้งสิ้น</td><td class="text-center text-gray-800">'+gCount.toLocaleString()+'</td><td class="text-right text-moph">'+gSum.toLocaleString()+'</td></tr></tfoot></table></div></div>';
+          var sortedRows = districtOrder.filter(a => grouped[a]).map(a => grouped[a]);
+          html += `<div class="table-container"><div class="table-header ${ut.bg} ${ut.text}">${ut.label}</div><div class="overflow-x-auto"><table class="summary-table"><thead><tr><th>อำเภอ</th><th class="text-center">รายการ</th><th class="text-right">งบรวม</th></tr></thead><tbody>`;
+          if (sortedRows.length > 0) { sortedRows.forEach(r => { html += `<tr><td class="font-bold text-gray-700">${r.amp}</td><td class="text-center">${r.count.toLocaleString()}</td><td class="text-right font-medium text-gray-800">${r.sum.toLocaleString()}</td></tr>`; }); } else { html += `<tr><td colspan="3" class="text-center py-6 text-gray-400 text-xs italic">ไม่มีข้อมูล</td></tr>`; }
+          html += `</tbody><tfoot><tr><td>รวมทั้งสิ้น</td><td class="text-center">${totalItems.toLocaleString()}</td><td class="text-right text-[#007B5E]">${totalSum.toLocaleString()}</td></tr></tfoot></table></div></div>`;
         });
-        html += '</div>';
+        html += `</div></div>`;
       });
       document.getElementById('summary-section').innerHTML = html;
     }
 
-    function updateMap(eq, bd) {
-      if(mapMarkers.length) { mapMarkers.forEach(function(m){ map.removeLayer(m); }); mapMarkers = []; }
-      var summ = {}; [].concat(eq, bd).forEach(function(d) { if(d.amphoe && d.amphoe !== '-') summ[d.amphoe] = (summ[d.amphoe]||0) + (Number(d['วงเงินรวม'])||0); });
-      var max = Math.max.apply(null, Object.values(summ).concat([1]));
-      Object.keys(ampCoords).forEach(function(n) {
-        var bud = summ[n]||0;
-        if(bud > 0) {
-          var m = L.circleMarker(ampCoords[n], { radius: Math.sqrt(bud/max)*35, fillColor: bud>(max*0.7)?"#dc2626":bud>(max*0.3)?"#f59e0b":"#10b981", color: "#fff", weight: 1.5, fillOpacity: 0.7 }).addTo(map).bindPopup('<b>อ. '+n+'</b><br>งบรวม: '+bud.toLocaleString()+' บาท');
-          mapMarkers.push(m);
-        }
-        L.marker(ampCoords[n], { icon: L.divIcon({ className: 'district-label', html: n, iconSize:[100,20], iconAnchor:[50,-10] }) }).addTo(map);
-      });
+    // --- REPORT LOGIC ---
+    function setReportType(type) {
+      currentRptType = type;
+      try {
+        $('#tab-eq').toggleClass('text-[#007B5E] border-b-2 border-[#007B5E]', type === 'ครุภัณฑ์').toggleClass('text-gray-500', type !== 'ครุภัณฑ์');
+        $('#tab-bd').toggleClass('text-[#007B5E] border-b-2 border-[#007B5E]', type === 'สิ่งก่อสร้าง').toggleClass('text-gray-500', type !== 'สิ่งก่อสร้าง');
+      } catch (e) { }
+      renderReportTable();
     }
 
-    function updateChart(eq, bd) {
-      var ctx = document.getElementById('mophChart').getContext('2d');
-      var units = ['บริการ (รพ.)', 'บริหาร', 'บริการ (ปฐมภูมิ)'];
-      var getVal = function(list) { return units.map(function(u) { return list.filter(function(d) { return d.unitType === u; }).reduce(function(a, b) { return a + (Number(b['วงเงินรวม']) || 0); }, 0); }); };
-      if(myChart) myChart.destroy();
-      Chart.register(ChartDataLabels);
-      myChart = new Chart(ctx, { type: 'bar', data: { labels: units, datasets: [{ label: 'ครุภัณฑ์', data: getVal(eq), backgroundColor: '#3b82f6', borderRadius: 8 }, { label: 'สิ่งก่อสร้าง', data: getVal(bd), backgroundColor: '#10b981', borderRadius: 8 }]}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', align: 'start', labels: { font: { family: 'Prompt', size: 11 } } }, datalabels: { anchor: 'end', align: 'top', formatter: function(v){ return v > 0 ? v.toLocaleString() : ''; }, font: { weight: 'bold', family: 'Prompt', size: 10 } } } } });
+
+    function isPaidSpentStatus(v) {
+      const s = String(v || '').replace(/\s+/g, '').trim();
+      if (!s) return false;
+      return /(เบิกจ่ายแล้ว|เบิกจ่ายเรียบร้อย|เบิกจ่ายเสร็จ|เบิกจ่ายแล้วเสร็จ|เสร็จสิ้น|จ่ายแล้ว|โอนแล้ว)/.test(s);
+    }
+    function renderRiskBadge(risk) {
+      const r = String(risk || '').trim();
+      let cls = 'bg-gray-200 text-gray-700';
+      if (r.includes('เสี่ยงต่ำ')) cls = 'bg-emerald-100 text-emerald-700';
+      else if (r.includes('เสี่ยงปานกลาง')) cls = 'bg-yellow-100 text-yellow-800';
+      else if (r.includes('เสี่ยงสูง')) cls = 'bg-red-100 text-red-700';
+      else if (r.includes('เสี่ยงพับ')) cls = 'bg-orange-100 text-orange-800';
+      return `<span class="px-2 py-0.5 rounded-full text-xs font-bold ${cls}">${r || '-'}</span>`;
+    }
+
+    function renderReportTable() {
+      const year = document.getElementById('rptYear').value;
+      const amphoe = document.getElementById('rptAmphoe').value;
+      const search = document.getElementById('rptSearch').value.toLowerCase();
+
+      const source = (currentRptType === 'ครุภัณฑ์') ? (appData.report.equipment || appData.report.eq || []) : (appData.report.building || appData.report.bd || []);
+
+      const filtered = source
+        .filter(d => (year === 'All' || String(d.year) === String(year))
+          && (amphoe === 'All' || String(d.amphoe) === String(amphoe))
+          && ((String(d.name || '').toLowerCase().includes(search)) || (String(d.hospName || '').toLowerCase().includes(search)))
+        )
+        // ✅ ไม่แสดงรายการที่ “เบิกจ่ายแล้ว/โอนแล้ว/เสร็จสิ้น/เบิกจ่ายแล้วเสร็จ” ฯลฯ
+        .filter(d => !isPaidSpentStatus(d.spentStatus));
+
+      // Header ตามสเปค (10 คอลัมน์)
+      const header = `<tr>
+    <th class="w-20 text-center">จัดการ</th>
+    <th>ปีงบประมาณ</th>
+    <th>รายการ</th>
+    <th>ชื่อหน่วยบริการ</th>
+    <th class="text-right">ราคาต่อหน่วย</th>
+    <th class="text-right">วงเงินจัดหาได้</th>
+    <th>ทำถึงขั้นตอนการจัดซื้อจัดจ้าง</th>
+    <th>สถานะการดำเนินการ</th>
+    <th>สถานะการเบิกจ่าย</th>
+    <th>สถานะความเสี่ยง</th>
+  </tr>`;
+      document.getElementById('rpt-thead').innerHTML = header;
+
+      let htmlRows = '';
+      if (filtered.length === 0) {
+        htmlRows = `<tr><td colspan="10" class="text-center p-8 text-gray-400">ไม่พบข้อมูลในระบบ</td></tr>`;
+      } else {
+        filtered.forEach(r => {
+          const btn = `<button onclick="openEdit('${r.id}', '${currentRptType}')" class="btn-edit">แก้ไข</button>`;
+          const unitPrice = (r.unitPrice !== undefined && r.unitPrice !== null && r.unitPrice !== '')
+            ? Number(r.unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : '-';
+          const contract = Number(r.contractAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          htmlRows += `<tr>
+        <td class="text-center">${btn}</td>
+        <td>${r.year || '-'}</td>
+        <td>${r.name || '-'}</td>
+        <td>${r.hospName || '-'}</td>
+        <td class="text-right">${unitPrice}</td>
+        <td class="text-right">${contract}</td>
+        <td>${r.procStep || '-'}</td>
+        <td>${r.status || '-'}</td>
+        <td>${r.spentStatus || '-'}</td>
+        <td>${renderRiskBadge(r.risk)}</td>
+      </tr>`;
+        });
+      }
+      document.getElementById('rpt-tbody').innerHTML = htmlRows;
+    }
+    // --- SEARCH LOGIC ---
+    function initSearchUI() {
+      document.getElementById('search-loading').classList.add('hidden');
+      document.getElementById('search-table-container').classList.remove('hidden');
+
+      if (!appData.search) return;
+
+      const years = new Set();
+      const amphoes = new Set();
+      const hosps = {};
+
+      [...(appData.search.equipment || []), ...(appData.search.building || [])].forEach(d => {
+        if (d.year) years.add(d.year);
+        if (d.amphoe && d.amphoe !== '-') amphoes.add(d.amphoe);
+        if (d.hospId) hosps[d.hospId] = { id: d.hospId, name: d.hospName, amp: d.amphoe };
+      });
+
+      const yHtml = '<option value="All">ทุกปีงบประมาณ</option>' + Array.from(years).sort().reverse().map(y => `<option value="${y}">${y}</option>`).join('');
+      const aHtml = '<option value="All">ทุกอำเภอ</option>' + Array.from(amphoes).sort().map(a => `<option value="${a}">${a}</option>`).join('');
+      const hHtml = '<option value="All">- ทุกหน่วยบริการ -</option>' + Object.values(hosps).sort((a, b) => a.name.localeCompare(b.name)).map(h => `<option value="${h.id}">${h.name} (อ.${h.amp})</option>`).join('');
+
+      document.getElementById('srcYear').innerHTML = yHtml;
+      document.getElementById('srcAmphoe').innerHTML = aHtml;
+      document.getElementById('srcHosp').innerHTML = hHtml;
+
+      renderSearchTable();
+    }
+
+    function setSearchType(type) {
+      currentSrcType = type;
+      srcCurrentPage = 1;
+      try {
+        $('#tab-src-eq').toggleClass('text-[#007B5E] border-b-2 border-[#007B5E]', type === 'ครุภัณฑ์').toggleClass('text-gray-500', type !== 'ครุภัณฑ์');
+        $('#tab-src-bd').toggleClass('text-[#007B5E] border-b-2 border-[#007B5E]', type === 'สิ่งก่อสร้าง').toggleClass('text-gray-500', type !== 'สิ่งก่อสร้าง');
+      } catch (e) { }
+      renderSearchTable();
+    }
+
+    function renderSearchTable() {
+      if (!appData.search) {
+        document.getElementById('src-tbody').innerHTML = `<tr><td colspan="6" class="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td></tr>`;
+        return;
+      }
+
+      const year = document.getElementById('srcYear').value;
+      const amphoe = document.getElementById('srcAmphoe').value;
+      const hosp = document.getElementById('srcHosp').value;
+      const searchTxt = document.getElementById('srcKeyword').value.toLowerCase();
+
+      const source = (currentSrcType === 'ครุภัณฑ์') ? (appData.search.equipment || []) : (appData.search.building || []);
+
+      const filtered = source.filter(d =>
+        (year === 'All' || String(d.year) === String(year)) &&
+        (amphoe === 'All' || String(d.amphoe) === String(amphoe)) &&
+        (hosp === 'All' || String(d.hospId) === String(hosp)) &&
+        ((String(d.name || '').toLowerCase().includes(searchTxt)) || (String(d.hospName || '').toLowerCase().includes(searchTxt)))
+      );
+
+      // --- Sorting Logic ---
+      const amphoeOrder = ["เมืองเลย", "นาด้วง", "เชียงคาน", "ปากชม", "ด่านซ้าย", "นาแห้ว", "ภูเรือ", "ท่าลี่", "วังสะพุง", "ภูกระดึง", "ภูหลวง", "ผาขาว", "เอราวัณ", "หนองหิน"];
+      const getAmphoeWeight = (amp) => {
+        let idx = amphoeOrder.indexOf(amp);
+        return idx === -1 ? 999 : idx;
+      };
+
+      const unitTypeOrder = ["โรงพยาบาลทั่วไป", "โรงพยาบาลชุมชน", "โรงพยาบาลส่งเสริมสุขภาพตำบล", "สำนักงานสาธารณสุขจังหวัด", "สำนักงานสาธารณสุขอำเภอ"];
+      const getUnitTypeWeight = (type) => {
+        if (!type) return 999;
+        let idx = unitTypeOrder.findIndex(t => type.includes(t) || t.includes(type));
+        if (idx !== -1) return idx;
+        if (type.includes('รพ.ท.') || type.includes('รพท.')) return 0;
+        if (type.includes('รพ.ช.') || type.includes('รพช.')) return 1;
+        if (type.includes('รพ.สต.') || type.includes('รพสต.')) return 2;
+        if (type.includes('สสจ.')) return 3;
+        if (type.includes('สสอ.')) return 4;
+        return 999;
+      };
+
+      const getStatusWeight = (status) => {
+        if (!status) return 999;
+        if (status.includes('รอพิจารณา') || status.includes('รอการ')) return 1;
+        if (status.includes('จัดสรร') || status.includes('อนุมัติ')) {
+          if (status.includes('ไม่ได้รับการจัดสรร') || status.includes('ไม่อนุมัติ') || status.includes('ไม่เข้าไข')) return 3;
+          return 2;
+        }
+        if (status.includes('ไม่ได้รับ') || status.includes('ไม่อนุมัติ')) return 3;
+        return 999;
+      };
+
+      filtered.sort((a, b) => {
+        let cmpAmp = getAmphoeWeight(a.amphoe) - getAmphoeWeight(b.amphoe);
+        if (cmpAmp !== 0) return cmpAmp;
+        let cmpUnit = getUnitTypeWeight(a.unitType) - getUnitTypeWeight(b.unitType);
+        if (cmpUnit !== 0) return cmpUnit;
+        let cmpStatus = getStatusWeight(a.status) - getStatusWeight(b.status);
+        if (cmpStatus !== 0) return cmpStatus;
+        return 0;
+      });
+
+      // --- Calculate Summary ---
+      let totalBudget = 0;
+      let approvedCount = 0;
+      filtered.forEach(r => {
+        totalBudget += Number(r.budget || 0);
+        const st = r.status || '';
+        if ((st.includes('จัดสรร') || st.includes('อนุมัติ')) && !st.includes('ไม่ได้รับการจัดสรร') && !st.includes('ไม่อนุมัติ') && !st.includes('ไม่เข้าไข')) {
+          approvedCount++;
+        }
+      });
+
+      document.getElementById('src-sum-title').innerText = currentSrcType === 'ครุภัณฑ์' ? 'จำนวนครุภัณฑ์ (รายการ)' : 'จำนวนสิ่งก่อสร้าง (รายการ)';
+      document.getElementById('src-sum-count').innerText = filtered.length.toLocaleString();
+      document.getElementById('src-sum-budget').innerText = totalBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('src-sum-approved').innerText = approvedCount.toLocaleString();
+
+      // --- Pagination Logic ---
+      document.getElementById('src-pagination-wrapper').classList.remove('hidden');
+      let totalItems = filtered.length;
+      let totalPages = 1;
+      let displayData = filtered;
+
+      if (srcItemsPerPage !== 'all') {
+        const limit = parseInt(srcItemsPerPage, 10);
+        totalPages = Math.ceil(totalItems / limit) || 1;
+        if (srcCurrentPage > totalPages) srcCurrentPage = totalPages;
+        const startIdx = (srcCurrentPage - 1) * limit;
+        displayData = filtered.slice(startIdx, startIdx + limit);
+      }
+
+      // --- Render Table ---
+      let htmlRows = '';
+      if (displayData.length === 0) {
+        htmlRows = `<tr><td colspan="6" class="text-center p-8 text-gray-400 font-medium">ไม่พบรายการประวัติ</td></tr>`;
+      } else {
+        displayData.forEach(r => {
+          let badgeClass = 'bg-gray-100 text-gray-700';
+          let statusLabel = r.status;
+          if (statusLabel.includes('จัดสรร') || statusLabel.includes('อนุมัติ')) {
+            if (statusLabel.includes('ไม่ได้รับการจัดสรร') || statusLabel.includes('ไม่อนุมัติ') || statusLabel.includes('ไม่เข้าไข')) {
+              badgeClass = 'bg-red-100 text-red-700 border border-red-200';
+            } else {
+              badgeClass = 'bg-green-100 text-green-700';
+            }
+          }
+          else if (statusLabel.includes('อยู่ระหว่างพิจารณา') || statusLabel.includes('รอพิจารณา') || statusLabel.includes('รอการ')) badgeClass = 'bg-yellow-100 text-yellow-700';
+          else if (statusLabel.includes('ไม่อนุมัติ') || statusLabel.includes('ไม่เข้าไข')) badgeClass = 'bg-red-100 text-red-700';
+
+          let budgetFmt = Number(r.budget || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+          htmlRows += `<tr class="hover:bg-gray-50 transition-colors border-b">
+            <td class="p-2 text-sm text-gray-800 font-medium">${r.hospName}</td>
+            <td class="p-2 text-sm text-gray-600">${r.amphoe}</td>
+            <td class="p-2 text-sm text-center text-gray-600">${r.hospLevel || '-'}</td>
+            <td class="p-2 text-sm text-center text-gray-600">${r.sapLevel || '-'}</td>
+            <td class="p-2 text-sm text-center text-gray-600">${r.year}</td>
+            <td class="p-2 text-sm text-[#007B5E] font-medium">${r.name}</td>
+            <td class="p-2 text-sm text-right">${budgetFmt}</td>
+            <td class="p-2 text-sm text-center"><span class="px-2 py-1 rounded text-xs font-bold ${badgeClass}">${statusLabel}</span></td>
+          </tr>`;
+        });
+      }
+      document.getElementById('src-tbody').innerHTML = htmlRows;
+
+      // --- Render Pagination Controls ---
+      let pageHtml = '';
+      if (srcItemsPerPage !== 'all' && totalPages > 1) {
+        pageHtml += `<button onclick="changeSearchPage(${srcCurrentPage - 1})" class="px-2 py-1 border rounded hover:bg-gray-100 disabled:opacity-50" ${srcCurrentPage === 1 ? 'disabled' : ''}>&laquo;</button>`;
+
+        // Simple pagination numbers (show max 5 pages around current)
+        let startPage = Math.max(1, srcCurrentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+        if (startPage > 1) pageHtml += `<span class="px-1 text-gray-400">...</span>`;
+        for (let i = startPage; i <= endPage; i++) {
+          if (i === srcCurrentPage) {
+            pageHtml += `<button class="px-2 py-1 border rounded bg-[#007B5E] text-white font-bold">${i}</button>`;
+          } else {
+            pageHtml += `<button onclick="changeSearchPage(${i})" class="px-2 py-1 border rounded hover:bg-gray-100">${i}</button>`;
+          }
+        }
+        if (endPage < totalPages) pageHtml += `<span class="px-1 text-gray-400">...</span>`;
+
+        pageHtml += `<button onclick="changeSearchPage(${srcCurrentPage + 1})" class="px-2 py-1 border rounded hover:bg-gray-100 disabled:opacity-50" ${srcCurrentPage === totalPages ? 'disabled' : ''}>&raquo;</button>`;
+        pageHtml += `<span class="ml-2 text-xs text-gray-500">หน้า ${srcCurrentPage} / ${totalPages} (รวม ${totalItems} รายการ)</span>`;
+      } else {
+        pageHtml = `<span class="text-xs text-gray-500">รวม ${totalItems} รายการ</span>`;
+      }
+      document.getElementById('src-pagination-controls').innerHTML = pageHtml;
+    }
+
+    function changeSearchPage(page) {
+      srcCurrentPage = page;
+      renderSearchTable();
+    }
+
+    function changeSearchItemsPerPage() {
+      srcItemsPerPage = document.getElementById('srcItemsPerPage').value;
+      srcCurrentPage = 1;
+      renderSearchTable();
+    }
+
+    // --- NEW ENTRY LOGIC ---
+    function initOptionsUI() {
+      const opts = appData.options;
+      const hospHtml = '<option value="">- พิมพ์ค้นหาหน่วยบริการ -</option>' + (opts.hospitals || []).map(h => `<option value="${h.id}">${h.name} (อ.${h.amphoe})</option>`).join('');
+      if (document.getElementById('entHospId')) document.getElementById('entHospId').innerHTML = hospHtml;
+      try { if ($('#entHospId').length) $('#entHospId').select2({ width: '100%' }); } catch (e) { }
+
+      const fill = (id, list) => { if (document.getElementById(id)) document.getElementById(id).innerHTML = '<option value="">- เลือก -</option>' + (list || []).map(i => `<option>${i}</option>`).join(''); };
+      fill('entMethod', opts.c_procedure); fill('entStatus', opts.c_status); fill('entRisk', opts.c_risk); fill('entSpentStatus', opts.c_spent);
+      fill('edtMethod', opts.c_procedure); fill('edtStatus', opts.c_status); fill('edtSpentStatus', opts.c_spent); fill('edtRisk', opts.c_risk);
+    }
+
+    function setEntryType(type) {
+      if (document.getElementById('entType')) document.getElementById('entType').value = type;
+      try {
+        if (type === 'ครุภัณฑ์') {
+          $('#btn-ent-eq').addClass('bg-[#007B5E] text-white shadow').removeClass('text-gray-500 hover:bg-gray-50');
+          $('#btn-ent-bd').removeClass('bg-[#007B5E] text-white shadow').addClass('text-gray-500 hover:bg-gray-50');
+          $('#ent-building-fields').addClass('hidden');
+        } else {
+          $('#btn-ent-bd').addClass('bg-[#007B5E] text-white shadow').removeClass('text-gray-500 hover:bg-gray-50');
+          $('#btn-ent-eq').removeClass('bg-[#007B5E] text-white shadow').addClass('text-gray-500 hover:bg-gray-50');
+          $('#ent-building-fields').removeClass('hidden');
+        }
+      } catch (e) { }
+      updateEntProcStep();
+    }
+
+    function updateEntProcStep() {
+      const type = document.getElementById('entType') ? document.getElementById('entType').value : '';
+      const method = document.getElementById('entMethod') ? document.getElementById('entMethod').value : '';
+      let key = '';
+      if (method.includes('e-bidding')) key = type === 'ครุภัณฑ์' ? 'c_proc_ebid_equipment' : 'c_proc_ebid_building';
+      else if (method.includes('เฉพาะเจาะจง')) key = type === 'ครุภัณฑ์' ? 'c_proc_specific_equipment' : 'c_proc_specific_building';
+      else if (method.includes('คัดเลือก')) key = 'c_proc_selection';
+
+      const stepEl = document.getElementById('entProcStep');
+      if (!stepEl) return;
+
+      if (key && appData.options[key]) { stepEl.innerHTML = '<option value="">- เลือก -</option>' + appData.options[key].map(i => `<option>${i}</option>`).join(''); }
+      else { stepEl.innerHTML = '<option value="">- เลือกวิธีจัดซื้อก่อน -</option>'; }
+    }
+
+    function calcEntTotal() {
+      const p = parseFloat(document.getElementById('entPrice') ? document.getElementById('entPrice').value : 0) || 0;
+      const q = parseFloat(document.getElementById('entQty') ? document.getElementById('entQty').value : 0) || 0;
+      if (document.getElementById('entTotal')) document.getElementById('entTotal').value = (p * q).toLocaleString(undefined, { minimumFractionDigits: 2 });
+    }
+
+    function calcEntBalance() {
+      const alloc = parseFloat(document.getElementById('entAlloc') ? document.getElementById('entAlloc').value : 0) || 0;
+      const paid = parseFloat(document.getElementById('entPaid') ? document.getElementById('entPaid').value : 0) || 0;
+      if (document.getElementById('entBalance')) document.getElementById('entBalance').value = (alloc - paid).toLocaleString(undefined, { minimumFractionDigits: 2 });
+    }
+
+    function saveNewEntry() {
+      try {
+        if (!$('#entHospId').val() || !$('#entName').val()) { Swal.fire('แจ้งเตือน', 'กรุณาระบุหน่วยบริการและชื่อรายการ', 'warning'); return; }
+        const form = {
+          budgetType: $('#entType').val(), year: $('#entYear').val(), hospId: $('#entHospId').val(), name: $('#entName').val(), subType: $('#entSubType').val(), unit: $('#entUnit').val(),
+          price: $('#entPrice').val(), qty: $('#entQty').val(), total: parseFloat($('#entTotal').val().replace(/,/g, '')) || 0, bg1: $('#entBg1').val(), bg2: $('#entBg2').val(), bg3: $('#entBg3').val(),
+          method: $('#entMethod').val(), alloc: $('#entAlloc').val(), signDate: $('#entSignDate').val(), endDate: $('#entEndDate').val(), delDate: $('#entDelDate').val(), inspectDate: $('#entInspectDate').val(),
+          paidDate: $('#entPaidDate').val(), paid: $('#entPaid').val(), balance: parseFloat($('#entBalance').val().replace(/,/g, '')) || 0, spentStatus: $('#entSpentStatus').val(),
+          procStep: $('#entProcStep').val(), status: $('#entStatus').val(), risk: $('#entRisk').val(), remark: $('#entRemark').val(),
+          duration: $('#entDuration').val(), totalPeriod: $('#entTotalPeriod').val(), yearPeriod: $('#entYearPeriod').val(), currentPeriod: $('#entCurrentPeriod').val(), delayPeriod: $('#entDelayPeriod').val(), delayReason: $('#entDelayReason').val(), contractDueDate: $('#entContractDueDate').val(), periodStr: $('#entPeriodStr').val()
+        };
+        Swal.fire({ title: 'กำลังบันทึกและสร้าง Log...', didOpen: () => Swal.showLoading() });
+        google.script.run.withSuccessHandler(res => {
+          if (res.success) {
+            Swal.fire('สำเร็จ', 'บันทึกข้อมูลเรียบร้อย ID: ' + res.id, 'success').then(() => {
+              document.getElementById('entryForm').reset(); $('#entHospId').val(null).trigger('change');
+              google.script.run.withSuccessHandler(r => { if (!r.error) { appData.report = r; renderReportTable(); } }).getReportData();
+            });
+          } else Swal.fire('ผิดพลาด', res.error, 'error');
+        }).saveBudgetRecord(form);
+      } catch (e) { alert("บันทึกผิดพลาด: " + e.message); }
+    }
+
+    // --- EDIT MODAL ---
+
+    function updateEdtProcStep() {
+      const type = document.getElementById('edtType') ? document.getElementById('edtType').value : '';
+      const method = document.getElementById('edtMethod') ? document.getElementById('edtMethod').value : '';
+      let key = '';
+      if ((method || '').includes('e-bidding') || (method || '').toLowerCase().includes('ebidding')) key = type === 'ครุภัณฑ์' ? 'c_proc_ebid_equipment' : 'c_proc_ebid_building';
+      else if ((method || '').includes('เฉพาะเจาะจง')) key = type === 'ครุภัณฑ์' ? 'c_proc_specific_equipment' : 'c_proc_specific_building';
+      else if ((method || '').includes('คัดเลือก')) key = 'c_proc_selection';
+
+      const stepEl = document.getElementById('edtProcStep');
+      if (!stepEl) return;
+      if (key && appData.options && appData.options[key]) {
+        stepEl.innerHTML = '<option value="">- เลือก -</option>' + appData.options[key].map(i => `<option>${i}</option>`).join('');
+      } else {
+        stepEl.innerHTML = '<option value="">- เลือกวิธีจัดซื้อก่อน -</option>';
+      }
+    }
+
+
+    function formatMoney2(n) { const x = Number(n || 0); return x.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function parseMoneyInput(s) { const t = String(s || '').replace(/,/g, '').trim(); const n = parseFloat(t); return isNaN(n) ? 0 : n; }
+    function updateRemaining() { const c = parseMoneyInput($('#edtContract').val()); const sp = parseMoneyInput($('#edtSpentAmount').val()); $('#edtRemaining').val(formatMoney2(c - sp)); }
+    function bindMoney2() { $('.money2').off('blur').on('blur', function () { $(this).val(formatMoney2(parseMoneyInput($(this).val()))); updateRemaining(); }); }
+
+    const TH_MONTHS_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    function formatThaiFromDate(d) { if (!(d instanceof Date)) return ''; return `${d.getDate()} ${TH_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear() + 543}`; }
+    function isoToDate(iso) { const s = String(iso || '').trim(); const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/); if (!m) return null; return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])); }
+    function initDatePickers(root = document) {
+      const els = root.querySelectorAll ? root.querySelectorAll('.datepick') : document.querySelectorAll('.datepick');
+      els.forEach(el => {
+        if (el._fp) return;
+        flatpickr.localize(flatpickr.l10ns.th);
+        flatpickr(el, {
+          locale: 'th',
+          dateFormat: 'Y-m-d',
+          altInput: true,
+          altFormat: 'THAI',
+          altInputClass: el.className + ' bg-white cursor-pointer',
+          formatDate: (date, format, locale) => {
+            if (format === 'THAI') return formatThaiFromDate(date);
+            return flatpickr.formatDate(date, format);
+          },
+          allowInput: false,
+          clickOpens: true,
+          disableMobile: true,
+          onReady: (selectedDates, dateStr, fp) => {
+            if (fp.altInput) {
+              fp.altInput.setAttribute('readonly', 'readonly');
+              fp.altInput.placeholder = 'เลือกวันที่';
+            }
+            el.setAttribute('readonly', 'readonly');
+          }
+        });
+      });
+    }
+    function setPickerISO(id, iso) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      initDatePickers(document);
+      if (el._fp) {
+        el._fp.setDate(iso || null, true, 'Y-m-d');
+      } else { el.value = iso || ''; }
+    }
+
+    function openEdit(id, type) {
+      try {
+        const data = (type === 'ครุภัณฑ์' ? (appData.report.equipment || appData.report.eq || []) : (appData.report.building || appData.report.bd || [])).find(d => d.id == id);
+        if (!data) return;
+
+        $('#edtId').val(id); $('#edtType').val(type);
+        $('#edtName').text(data.name || '-'); $('#edtHosp').text(data.hospName || '-');
+
+        $('#edtMethod').val(data.method || '');
+        updateEdtProcStep();
+        $('#edtProcStep').val(data.procStep || '');
+
+        $('#edtStatus').val(data.status || '');
+        $('#edtSpentStatus').val(data.spentStatus || '');
+        $('#edtRisk').val(data.risk || '');
+
+        $('#edtContract').val(formatMoney2(data.contractAmount || 0));
+        $('#edtSpentAmount').val(formatMoney2(data.spentAmount || 0));
+        updateRemaining();
+
+        if (type === 'สิ่งก่อสร้าง') {
+          $('#edt-building-fields').removeClass('hidden');
+          $('#edtTotalPeriod').val(data.totalPeriod || '');
+          $('#edtYearPeriod').val(data.yearPeriod || '');
+          $('#edtCurrentPeriod').val(data.currentPeriod || '');
+          $('#edtDelayPeriod').val(data.delayPeriod || '');
+          $('#edtDelayReason').val(data.delayReason || '');
+        } else {
+          $('#edt-building-fields').addClass('hidden');
+        }
+
+        initDatePickers(document);
+        setPickerISO('edtContractSignDate', data.contractSignDate);
+        setPickerISO('edtContractEndDate', data.contractEndDate);
+        setPickerISO('edtDeliveryDate', data.deliveryDate);
+        setPickerISO('edtInspectionDate', data.inspectionDate);
+        setPickerISO('edtPaymentDate', data.paymentDate);
+
+        $('#edtNote').val(data.note || '');
+
+        bindMoney2();
+        $('#editModal').fadeIn(200);
+      } catch (e) {
+        Swal.fire('ผิดพลาด', String(e), 'error');
+      }
+    }
+    function closeModal() { try { $('#editModal').fadeOut(200); } catch (e) { } }
+
+    function saveEdit() {
+      const form = {
+        id: $('#edtId').val(),
+        budgetType: $('#edtType').val(),
+        method: $('#edtMethod').val(),
+        contract: parseMoneyInput($('#edtContract').val()),
+        procStep: $('#edtProcStep').val(),
+        status: $('#edtStatus').val(),
+        spentStatus: $('#edtSpentStatus').val(),
+        risk: $('#edtRisk').val(),
+        contractSignDate: $('#edtContractSignDate').val(),
+        contractEndDate: $('#edtContractEndDate').val(),
+        deliveryDate: $('#edtDeliveryDate').val(),
+        inspectionDate: $('#edtInspectionDate').val(),
+        paymentDate: $('#edtPaymentDate').val(),
+        spentAmount: parseMoneyInput($('#edtSpentAmount').val()),
+        note: $('#edtNote').val(),
+        totalPeriod: $('#edtTotalPeriod').val(),
+        yearPeriod: $('#edtYearPeriod').val(),
+        currentPeriod: $('#edtCurrentPeriod').val(),
+        delayPeriod: $('#edtDelayPeriod').val(),
+        delayReason: $('#edtDelayReason').val()
+      };
+
+      Swal.fire({ title: 'กำลังอัปเดตและเก็บ Log...', didOpen: () => Swal.showLoading() });
+
+      google.script.run.withSuccessHandler(res => {
+        if (res && res.success) {
+          Swal.fire('สำเร็จ', 'อัปเดตข้อมูลเรียบร้อย', 'success');
+          closeModal();
+          google.script.run.withSuccessHandler(r => { if (!r.error) { appData.report = r; renderReportTable(); } }).getReportData();
+        } else {
+          Swal.fire('ผิดพลาด', (res && res.error) ? res.error : 'ไม่สามารถบันทึกได้', 'error');
+        }
+      }).withFailureHandler(err => Swal.fire('ผิดพลาด', String(err), 'error'))
+        .updateBudgetRecord(form);
     }
   </script>
 </body>
+
 </html>
