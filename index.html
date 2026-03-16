@@ -255,6 +255,9 @@
           class="px-4 py-1.5 rounded hover:bg-white/10 text-sm text-white/80 transition">รายงานความก้าวหน้า</button>
         <button onclick="switchPage('search')" id="btn-nav-src"
           class="px-4 py-1.5 rounded hover:bg-white/10 text-sm text-white/80 transition">ค้นหาประวัติคำขอ</button>
+        <button onclick="switchPage('serviceplan')" id="btn-nav-sp"
+          class="px-4 py-1.5 rounded hover:bg-white/10 text-sm text-white/80 transition text-center leading-tight">ครุภัณฑ์<br>Service
+          Plan</button>
         <button onclick="switchPage('entry')" id="btn-nav-ent"
           class="hidden px-4 py-1.5 rounded hover:bg-white/10 text-sm font-bold bg-white/10 transition border border-white/30">+
           บันทึกใหม่</button>
@@ -627,6 +630,111 @@
       </div>
     </div>
 
+    <!-- PAGE: SERVICE PLAN -->
+    <div id="page-serviceplan" class="hidden">
+      <!-- Service Plan Filter Container -->
+      <section
+        class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row items-end gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow w-full">
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 mb-1 uppercase">สาขา Service Plan</label>
+            <select id="spBranch" onchange="renderServicePlanTable()" class="filter-select w-full">
+              <option value="All">ทุกสาขา</option>
+              <!-- Options populated by JS -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 mb-1 uppercase">ค้นหาคำศัพท์</label>
+            <input type="text" id="spKeyword" onkeyup="renderServicePlanTable()" placeholder="ชื่อรายการ..."
+              class="border border-gray-300 rounded-lg p-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-[#007B5E] transition">
+          </div>
+        </div>
+        <button
+          onclick="document.getElementById('spBranch').value='All'; document.getElementById('spKeyword').value=''; renderServicePlanTable();"
+          class="px-6 py-2 bg-white border border-gray-300 text-gray-600 font-medium rounded-lg hover:bg-gray-50 transition shadow-sm h-[38px] whitespace-nowrap flex items-center justify-center">ล้างค่า</button>
+      </section>
+
+      <!-- Service Plan Summary Cards -->
+      <section id="sp-summary-cards" class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        <div
+          class="col-span-2 md:col-span-1 bg-[#F3F6FF] rounded-xl p-4 border border-blue-100 text-center shadow-sm flex flex-col justify-center">
+          <p class="text-[0.65rem] font-bold text-blue-600 mb-1 uppercase">จำนวนครุภัณฑ์ (รายการ)</p>
+          <h2 class="text-2xl font-black text-blue-700 m-0" id="sp-sum-count">0</h2>
+        </div>
+        <div
+          class="bg-[#FFF8E7] rounded-xl p-4 border border-yellow-100 text-center shadow-sm flex flex-col justify-center">
+          <p class="text-[0.65rem] font-bold text-yellow-600 mb-1 uppercase">ปีงบ 2571 (บาท)</p>
+          <h2 class="text-xl font-black text-yellow-700 m-0" id="sp-sum-2571">0.00</h2>
+        </div>
+        <div
+          class="bg-[#FFF8E7] rounded-xl p-4 border border-orange-100 text-center shadow-sm flex flex-col justify-center">
+          <p class="text-[0.65rem] font-bold text-orange-600 mb-1 uppercase">ปีงบ 2572 (บาท)</p>
+          <h2 class="text-xl font-black text-orange-700 m-0" id="sp-sum-2572">0.00</h2>
+        </div>
+        <div
+          class="bg-[#FFF8E7] rounded-xl p-4 border border-red-100 text-center shadow-sm flex flex-col justify-center">
+          <p class="text-[0.65rem] font-bold text-red-600 mb-1 uppercase">ปีงบ 2573 (บาท)</p>
+          <h2 class="text-xl font-black text-red-700 m-0" id="sp-sum-2573">0.00</h2>
+        </div>
+        <div
+          class="col-span-2 md:col-span-1 bg-[#F0FFF4] rounded-xl p-4 border border-green-100 text-center shadow-sm flex flex-col justify-center">
+          <p class="text-[0.65rem] font-bold text-green-600 mb-1 uppercase">วงเงินรวม (บาท)</p>
+          <h2 class="text-2xl font-black text-green-700 m-0" id="sp-sum-budget">0.00</h2>
+        </div>
+      </section>
+
+      <!-- Service Plan Pagination Controls -->
+      <div id="sp-pagination-wrapper"
+        class="hidden flex-col sm:flex-row justify-between items-center mb-4 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100 shadow-inner">
+        <div class="flex items-center gap-2 text-sm text-gray-600">
+          <span>แสดง</span>
+          <select id="spItemsPerPage" onchange="changeServicePlanItemsPerPage()"
+            class="border border-gray-300 rounded p-1 text-sm bg-white focus:outline-none focus:border-[#007B5E]">
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="all">ทั้งหมด</option>
+          </select>
+          <span>รายการ</span>
+        </div>
+        <div id="sp-pagination-controls" class="flex items-center gap-1 text-sm">
+          <!-- Buttons generated by JS -->
+        </div>
+      </div>
+
+      <!-- Service Plan Table Container -->
+      <div class="bg-white rounded-xl shadow-lg border-2 border-[#007B5E]/30 overflow-hidden relative">
+        <div id="sp-loading" class="hidden absolute inset-0 bg-white/80 z-20 flex flex-col justify-center items-center">
+          <div class="spinner border-4 border-[#007B5E] border-t-transparent rounded-full w-12 h-12 animate-spin mb-4">
+          </div>
+          <p class="text-[#007B5E] font-bold">กำลังโหลดข้อมูล Service Plan...</p>
+        </div>
+        <div class="overflow-x-auto max-h-[600px] overflow-y-auto w-full custom-scroll">
+          <table class="w-full text-left border-collapse table-auto min-w-[1000px]">
+            <thead class="sticky top-0 z-10 bg-[#007B5E] text-white">
+              <tr>
+                <th class="p-2 text-sm font-semibold w-1/6">สาขา SP</th>
+                <th class="p-2 text-sm font-semibold w-1/6">หน่วยบริการ</th>
+                <th class="p-2 text-sm font-semibold w-1/4">ชื่อรายการ</th>
+                <th class="p-2 text-right text-sm font-semibold">ราคาต่อหน่วย</th>
+                <th class="p-2 text-center text-sm font-semibold">ปีงบ 2571</th>
+                <th class="p-2 text-center text-sm font-semibold">ปีงบ 2572</th>
+                <th class="p-2 text-center text-sm font-semibold">ปีงบ 2573</th>
+                <th class="p-2 text-center text-sm font-semibold">รวมจำนวน</th>
+                <th class="p-2 text-right text-sm font-semibold">วงเงินรวม</th>
+              </tr>
+            </thead>
+            <tbody id="sp-tbody" class="bg-white divide-y divide-gray-100">
+              <tr>
+                <td colspan="9" class="text-center p-8 text-gray-500">กำลังโหลดข้อมูล...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <script>
@@ -635,6 +743,8 @@
     var currentSrcType = 'ครุภัณฑ์';
     var srcCurrentPage = 1;
     var srcItemsPerPage = 10;
+    var spCurrentPage = 1;
+    var spItemsPerPage = 10;
     var districtOrder = ["เมืองเลย", "นาด้วง", "เชียงคาน", "ปากชม", "ด่านซ้าย", "นาแห้ว", "ภูเรือ", "ท่าลี่", "วังสะพุง", "ภูกระดึง", "ภูหลวง", "ผาขาว", "เอราวัณ", "หนองหิน"];
     var ampCoords = { "เมืองเลย": [17.4860, 101.7223], "เชียงคาน": [17.8938, 101.6542], "ด่านซ้าย": [17.2713, 101.1491], "ปากชม": [18.0211, 101.8881], "นาด้วง": [17.4901, 101.9839], "ภูเรือ": [17.4552, 101.3621], "ท่าลี่": [17.6254, 101.4215], "วังสะพุง": [17.3015, 101.7681], "ภูกระดึง": [16.8837, 101.8839], "ภูหลวง": [17.1523, 101.6212], "ผาขาว": [17.0421, 102.0432], "เอราวัณ": [17.3421, 102.0123], "หนองหิน": [17.1023, 101.8542], "นาแห้ว": [17.4832, 101.0654] };
 
@@ -678,6 +788,30 @@
               initSearchUI();
             }
           }).getSearchData();
+
+          // 4. โหลด Service Plan เบื้องหลัง
+          document.getElementById('sp-loading').classList.remove('hidden');
+          google.script.run.withSuccessHandler(r => {
+            if (!r.error) {
+              appData.servicePlan = r.data || [];
+
+              // Extract unique branches for dropdown
+              const branches = new Set();
+              appData.servicePlan.forEach(d => {
+                if (d.branch && d.branch !== '-') branches.add(d.branch);
+              });
+              const branchHtml = '<option value="All">ทุกสาขา</option>' + Array.from(branches).sort().map(b => `<option value="${b}">${b}</option>`).join('');
+              document.getElementById('spBranch').innerHTML = branchHtml;
+
+              document.getElementById('sp-loading').classList.add('hidden');
+              renderServicePlanTable();
+            } else {
+              document.getElementById('sp-loading').classList.add('hidden');
+            }
+          }).withFailureHandler(function (err) {
+            document.getElementById('sp-loading').classList.add('hidden');
+            console.error('Service Plan Error:', err);
+          }).getServicePlanData();
         })
         .withFailureHandler(function (err) {
           document.getElementById('loader-text').innerHTML = `<span style="color:red;">Server Connection Failed</span>`;
@@ -688,20 +822,23 @@
 
     // --- NAVIGATION ---
     function switchPage(page) {
-      $('#page-dashboard, #page-report, #page-entry, #page-search').addClass('hidden');
+      $('#page-dashboard, #page-report, #page-entry, #page-search, #page-serviceplan').addClass('hidden');
       $('#page-' + page).removeClass('hidden');
 
-      $('#btn-nav-dash, #btn-nav-rep, #btn-nav-ent, #btn-nav-src').removeClass('bg-white/20 font-bold text-white shadow-sm').addClass('hover:bg-white/10 text-white/80 border-transparent').removeClass('border-white/30');
+      $('#btn-nav-dash, #btn-nav-rep, #btn-nav-ent, #btn-nav-src, #btn-nav-sp').removeClass('bg-white/20 font-bold text-white shadow-sm').addClass('hover:bg-white/10 text-white/80 border-transparent').removeClass('border-white/30');
 
       if (page === 'dashboard') {
         $('#btn-nav-dash').addClass('bg-white/20 font-bold text-white shadow-sm').removeClass('hover:bg-white/10 text-white/80 border-transparent');
         setTimeout(() => { if (map) map.invalidateSize(); }, 200);
       } else if (page === 'report') {
         $('#btn-nav-rep').addClass('bg-white/20 font-bold text-white shadow-sm').removeClass('hover:bg-white/10 text-white/80 border-transparent');
-        renderReportTable();
+        if (typeof renderReportTable === 'function') renderReportTable();
       } else if (page === 'search') {
         $('#btn-nav-src').addClass('bg-white/20 font-bold text-white shadow-sm').removeClass('hover:bg-white/10 text-white/80 border-transparent');
-        renderSearchTable();
+        if (typeof renderSearchTable === 'function') renderSearchTable();
+      } else if (page === 'serviceplan') {
+        $('#btn-nav-sp').addClass('bg-white/20 font-bold text-white shadow-sm').removeClass('hover:bg-white/10 text-white/80 border-transparent');
+        if (typeof renderServicePlanTable === 'function') renderServicePlanTable();
       } else if (page === 'entry') {
         $('#btn-nav-ent').addClass('bg-white/20 font-bold text-white border-white/30').removeClass('hover:bg-white/10 text-white/80 border-transparent');
       }
@@ -964,7 +1101,7 @@
         if (!status) return 999;
         if (status.includes('รอพิจารณา') || status.includes('รอการ')) return 1;
         if (status.includes('จัดสรร') || status.includes('อนุมัติ')) {
-          if (status.includes('ไม่ได้รับการจัดสรร') || status.includes('ไม่อนุมัติ') || status.includes('ไม่เข้าไข')) return 3;
+          if (status.includes('ไม่ได้รับจัดสรร') || status.includes('ไม่อนุมัติ') || status.includes('ไม่เข้าไข')) return 3;
           return 2;
         }
         if (status.includes('ไม่ได้รับ') || status.includes('ไม่อนุมัติ')) return 3;
@@ -987,7 +1124,7 @@
       filtered.forEach(r => {
         totalBudget += Number(r.budget || 0);
         const st = r.status || '';
-        if ((st.includes('จัดสรร') || st.includes('อนุมัติ')) && !st.includes('ไม่ได้รับการจัดสรร') && !st.includes('ไม่อนุมัติ') && !st.includes('ไม่เข้าไข')) {
+        if ((st.includes('จัดสรร') || st.includes('อนุมัติ')) && !st.includes('ไม่ได้รับจัดสรร') && !st.includes('ไม่อนุมัติ') && !st.includes('ไม่เข้าไข')) {
           approvedCount++;
         }
       });
@@ -1020,7 +1157,7 @@
           let badgeClass = 'bg-gray-100 text-gray-700';
           let statusLabel = r.status;
           if (statusLabel.includes('จัดสรร') || statusLabel.includes('อนุมัติ')) {
-            if (statusLabel.includes('ไม่ได้รับการจัดสรร') || statusLabel.includes('ไม่อนุมัติ') || statusLabel.includes('ไม่เข้าไข')) {
+            if (statusLabel.includes('ไม่ได้รับจัดสรร') || statusLabel.includes('ไม่อนุมัติ') || statusLabel.includes('ไม่เข้าไข')) {
               badgeClass = 'bg-red-100 text-red-700 border border-red-200';
             } else {
               badgeClass = 'bg-green-100 text-green-700';
@@ -1082,6 +1219,120 @@
       srcItemsPerPage = document.getElementById('srcItemsPerPage').value;
       srcCurrentPage = 1;
       renderSearchTable();
+    }
+
+    // --- SERVICE PLAN LOGIC ---
+    function renderServicePlanTable() {
+      const loader = document.getElementById('sp-loading');
+      if (loader) loader.classList.add('hidden');
+
+      if (!appData.servicePlan) {
+        document.getElementById('sp-tbody').innerHTML = `<tr><td colspan="5" class="text-center p-8 text-gray-500">ไม่พบข้อมูล Service Plan...</td></tr>`;
+        return;
+      }
+
+      const branchFilter = document.getElementById('spBranch').value;
+      const searchTxt = document.getElementById('spKeyword').value.toLowerCase();
+
+      // Check branch filter and text search
+      const filtered = appData.servicePlan.filter(d => {
+        let matchBranch = (branchFilter === 'All' || d.branch === branchFilter);
+
+        let matchText = (String(d.name || '').toLowerCase().includes(searchTxt)) ||
+          (String(d.hospName || '').toLowerCase().includes(searchTxt)) ||
+          (String(d.branch || '').toLowerCase().includes(searchTxt));
+
+        return matchBranch && matchText;
+      });
+
+      // Calculate Summary
+      let totalBudget = 0;
+      let b2571 = 0, b2572 = 0, b2573 = 0;
+
+      filtered.forEach(r => {
+        totalBudget += Number(r.budget || 0);
+        b2571 += Number(r.y2571 || 0) * Number(r.unitPrice || 0);
+        b2572 += Number(r.y2572 || 0) * Number(r.unitPrice || 0);
+        b2573 += Number(r.y2573 || 0) * Number(r.unitPrice || 0);
+      });
+
+      document.getElementById('sp-sum-count').innerText = filtered.length.toLocaleString();
+      document.getElementById('sp-sum-2571').innerText = b2571.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('sp-sum-2572').innerText = b2572.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('sp-sum-2573').innerText = b2573.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('sp-sum-budget').innerText = totalBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      // Pagination Logic
+      document.getElementById('sp-pagination-wrapper').classList.remove('hidden');
+      document.getElementById('sp-pagination-wrapper').classList.add('flex');
+      let totalItems = filtered.length;
+      let totalPages = 1;
+      let displayData = filtered;
+
+      if (spItemsPerPage !== 'all') {
+        const limit = parseInt(spItemsPerPage, 10);
+        totalPages = Math.ceil(totalItems / limit) || 1;
+        if (spCurrentPage > totalPages) spCurrentPage = totalPages;
+        const startIdx = (spCurrentPage - 1) * limit;
+        displayData = filtered.slice(startIdx, startIdx + limit);
+      }
+
+      // Render Table
+      let htmlRows = '';
+      if (displayData.length === 0) {
+        htmlRows = `<tr><td colspan="9" class="text-center p-8 text-gray-400 font-medium">ไม่พบรายการประวัติ</td></tr>`;
+      } else {
+        displayData.forEach(r => {
+          let budgetFmt = Number(r.budget || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          let unitPriceFmt = Number(r.unitPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+          htmlRows += `<tr class="hover:bg-gray-50 transition-colors border-b">
+            <td class="p-2 text-sm text-[#007B5E] font-medium">${r.branch}</td>
+            <td class="p-2 text-sm text-gray-800 font-medium">${r.hospName}</td>
+            <td class="p-2 text-sm text-gray-600">${r.name}</td>
+            <td class="p-2 text-sm text-right text-gray-600">${unitPriceFmt}</td>
+            <td class="p-2 text-sm text-center text-gray-600">${r.y2571 || '-'}</td>
+            <td class="p-2 text-sm text-center text-gray-600">${r.y2572 || '-'}</td>
+            <td class="p-2 text-sm text-center text-gray-600">${r.y2573 || '-'}</td>
+            <td class="p-2 text-sm text-center text-gray-600 font-bold">${r.qty || '-'}</td>
+            <td class="p-2 text-sm text-right font-medium">${budgetFmt}</td>
+          </tr>`;
+        });
+      }
+      document.getElementById('sp-tbody').innerHTML = htmlRows;
+
+      // Render Pagination Buttons
+      let pageHtml = '';
+      if (spItemsPerPage !== 'all' && totalPages > 1) {
+        pageHtml += `<button onclick="changeServicePlanPage(${spCurrentPage - 1})" class="px-2 py-1 border rounded hover:bg-gray-100 disabled:opacity-50" ${spCurrentPage === 1 ? 'disabled' : ''}>&laquo;</button>`;
+        let startPage = Math.max(1, spCurrentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+        if (startPage > 1) pageHtml += `<span class="px-1 text-gray-400">...</span>`;
+        for (let i = startPage; i <= endPage; i++) {
+          if (i === spCurrentPage) pageHtml += `<button class="px-2 py-1 border rounded bg-[#007B5E] text-white font-bold">${i}</button>`;
+          else pageHtml += `<button onclick="changeServicePlanPage(${i})" class="px-2 py-1 border rounded hover:bg-gray-100">${i}</button>`;
+        }
+        if (endPage < totalPages) pageHtml += `<span class="px-1 text-gray-400">...</span>`;
+
+        pageHtml += `<button onclick="changeServicePlanPage(${spCurrentPage + 1})" class="px-2 py-1 border rounded hover:bg-gray-100 disabled:opacity-50" ${spCurrentPage === totalPages ? 'disabled' : ''}>&raquo;</button>`;
+        pageHtml += `<span class="ml-2 text-xs text-gray-500">หน้า ${spCurrentPage} / ${totalPages} (รวม ${totalItems} รายการ)</span>`;
+      } else {
+        pageHtml = `<span class="text-xs text-gray-500">รวม ${totalItems} รายการ</span>`;
+      }
+      document.getElementById('sp-pagination-controls').innerHTML = pageHtml;
+    }
+
+    function changeServicePlanPage(page) {
+      spCurrentPage = page;
+      renderServicePlanTable();
+    }
+
+    function changeServicePlanItemsPerPage() {
+      spItemsPerPage = document.getElementById('spItemsPerPage').value;
+      spCurrentPage = 1;
+      renderServicePlanTable();
     }
 
     // --- NEW ENTRY LOGIC ---
