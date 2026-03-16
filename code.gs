@@ -110,6 +110,44 @@ function getSearchData() {
 }
 
 // ==========================================
+// 1.8. ดึงข้อมูล Service Plan (m_eq_serviceplan)
+// ==========================================
+function getServicePlanData() {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName('m_eq_serviceplan');
+    if (!sheet) return { error: 'ไม่พบชีต m_eq_serviceplan' };
+
+    const data = getSheetData(sheet);
+    const result = [];
+    
+    for (let i = 0; i < data.length; i++) {
+      let d = data[i];
+      let name = String(d['ชื่อรายการ'] || d['รายการ'] || '').trim();
+      let branch = String(d['สาขา SP'] || d['สาขา Service plan'] || d['สาขา'] || '-').trim();
+      let hospName = String(d['หน่วยบริการ'] || d['ชื่อหน่วยบริการ'] || '-').trim();
+      
+      if (name) {
+        result.push({
+          branch: branch,
+          hospName: hospName,
+          name: name,
+          unitPrice: parseMoney(d['ราคาต่อหน่วย'] || 0),
+          y2571: parseInt(d['แผนคำขอปีงบประมาณ 2571']) || 0,
+          y2572: parseInt(d['แผนคำขอปีงบประมาณ 2572']) || 0,
+          y2573: parseInt(d['แผนคำขอปีงบประมาณ 2573']) || 0,
+          qty: parseInt(d['รวมจำนวน']) || 0,
+          budget: parseMoney(d['วงเงินรวม'] || 0)
+        });
+      }
+    }
+    return { data: result };
+  } catch(e) {
+    return { error: e.message };
+  }
+}
+
+// ==========================================
 // 2. ดึงข้อมูลรายงาน (Report)
 // ==========================================
 function getReportData() {
